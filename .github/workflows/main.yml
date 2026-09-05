@@ -24,17 +24,19 @@ jobs:
         run: |
           flutter create build_project
 
-          # Firebase configuration
+          # Set Android minimum SDK to 23 for Firebase Auth
+          sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 23/' build_project/android/app/build.gradle
+
+      - name: Add Firebase configuration
+        run: |
           cp android/app/google-services.json build_project/android/app/google-services.json
 
-          # Firebase Auth requires Android API 23+
-          sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 23/' build_project/android/app/build.gradle.kts
-
-          # Use the fresh Android project
+      - name: Copy Android project
+        run: |
           rm -rf android
           cp -r build_project/android android
 
-      - name: Copy app code
+      - name: Prepare app code
         run: |
           if [ -f lib/main.dart ]; then
             echo "Using existing lib/main.dart"
@@ -44,10 +46,12 @@ jobs:
           fi
 
       - name: Get dependencies
-        run: flutter pub get
+        run: |
+          flutter pub get
 
       - name: Build APK
-        run: flutter build apk --release
+        run: |
+          flutter build apk --release
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
