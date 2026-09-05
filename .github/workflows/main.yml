@@ -24,26 +24,42 @@ jobs:
         run: |
           flutter create build_project
 
-          echo "Before minSdk change:"
-          grep -n "minSdk" build_project/android/app/build.gradle || true
-
-          sed -i -E 's/minSdkVersion[[:space:]]+.*/minSdkVersion 23/' build_project/android/app/build.gradle
-
-          echo "After minSdk change:"
-          grep -n "minSdk" build_project/android/app/build.gradle || true
-
       - name: Add Firebase configuration
         run: |
           cp android/app/google-services.json build_project/android/app/google-services.json
+
+      - name: Set Android minimum SDK
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          p = Path("build_project/android/app/build.gradle")
+          text = p.read_text()
+
+          text = text.replace(
+              "minSdkVersion flutter.minSdkVersion",
+              "minSdkVersion 23"
+          )
+
+          text = text.replace(
+              "minSdkVersion = flutter.minSdkVersion",
+              "minSdkVersion = 23"
+          )
+
+          p.write_text(text)
+          PY
+
+          grep -n "minSdk" build_project/android/app/build.gradle
 
       - name: Replace Android project
         run: |
           rm -rf android
           cp -r build_project/android android
 
-      - name: Prepare app
+      - name: Prepare app code
         run: |
           mkdir -p lib
+
           if [ -f lib/main.dart ]; then
             echo "Using existing lib/main.dart"
           else
@@ -54,10 +70,9 @@ jobs:
         run: |
           flutter pub get
 
-      - name: Check final minSdk
+      - name: Verify final Android minSdk
         run: |
-          echo "Final Android minSdk:"
-          grep -R "minSdk" android/app/build.gradle || true
+          grep -n "minSdk" android/app/build.gradle
 
       - name: Build APK
         run: |
