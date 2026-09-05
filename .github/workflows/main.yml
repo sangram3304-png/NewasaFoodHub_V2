@@ -19,27 +19,36 @@ jobs:
         with:
           flutter-version: '3.24.5'
           channel: stable
-          cache: true
 
-      - name: Create fresh Android project
+      - name: Create fresh Flutter project
         run: |
-          mkdir build_project
-          cd build_project
-          flutter create -t app .
-          rm -rf lib
-          cp -r ../lib .
-          cp ../pubspec.yaml .
+          flutter create build_project
+          cp -r build_project/android .
+          cp -r build_project/ios .
+          cp -r build_project/web .
+          cp -r build_project/linux .
+          cp -r build_project/macos .
+          cp -r build_project/windows .
+          cp build_project/pubspec.yaml .
+          cp build_project/pubspec.lock .
+          mkdir -p lib
           
-          sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 23/' android/app/build.gradle.kts
-          
-          flutter pub get
+      - name: Copy app code
+        run: |
+          if [ -f lib/main.dart ]; then
+            echo "Using existing lib/main.dart"
+          else
+            cp build_project/lib/main.dart lib/main.dart
+          fi
+
+      - name: Get dependencies
+        run: flutter pub get
 
       - name: Build APK
-        working-directory: build_project
         run: flutter build apk --release
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: newasa-food-hub-apk
-          path: build_project/build/app/outputs/flutter-apk/app-release.apk
+          name: NewasaFoodHub-APK
+          path: build/app/outputs/flutter-apk/app-release.apk
