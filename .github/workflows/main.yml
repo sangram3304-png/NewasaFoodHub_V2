@@ -24,30 +24,40 @@ jobs:
         run: |
           flutter create build_project
 
-          # Set Android minimum SDK to 23 for Firebase Auth
-          sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 23/' build_project/android/app/build.gradle
+          echo "Before minSdk change:"
+          grep -n "minSdk" build_project/android/app/build.gradle || true
+
+          sed -i -E 's/minSdkVersion[[:space:]]+.*/minSdkVersion 23/' build_project/android/app/build.gradle
+
+          echo "After minSdk change:"
+          grep -n "minSdk" build_project/android/app/build.gradle || true
 
       - name: Add Firebase configuration
         run: |
           cp android/app/google-services.json build_project/android/app/google-services.json
 
-      - name: Copy Android project
+      - name: Replace Android project
         run: |
           rm -rf android
           cp -r build_project/android android
 
-      - name: Prepare app code
+      - name: Prepare app
         run: |
+          mkdir -p lib
           if [ -f lib/main.dart ]; then
             echo "Using existing lib/main.dart"
           else
-            mkdir -p lib
             cp build_project/lib/main.dart lib/main.dart
           fi
 
       - name: Get dependencies
         run: |
           flutter pub get
+
+      - name: Check final minSdk
+        run: |
+          echo "Final Android minSdk:"
+          grep -R "minSdk" android/app/build.gradle || true
 
       - name: Build APK
         run: |
