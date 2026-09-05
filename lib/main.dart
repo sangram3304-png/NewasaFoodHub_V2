@@ -398,3 +398,477 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 }
+class PartnerDashboard extends StatelessWidget {
+  const PartnerDashboard({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(
+          'Hotel Partner',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(18),
+        children: [
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [
+                  Colors.deepOrange,
+                  Colors.orange,
+                ],
+              ),
+              borderRadius: BorderRadius.circular(22),
+            ),
+            child: const Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  Icons.storefront,
+                  color: Colors.white,
+                  size: 42,
+                ),
+                SizedBox(height: 10),
+                Text(
+                  'Partner Dashboard',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 23,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: 5),
+                Text(
+                  'Manage your hotel, menu and orders',
+                  style: TextStyle(
+                    color: Colors.white70,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          _partnerTile(
+            context,
+            Icons.add_business,
+            'Add Hotel',
+            'Register your hotel on Newasa Food Hub',
+            () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const AddHotelPage(),
+                ),
+              );
+            },
+          ),
+
+          _partnerTile(
+            context,
+            Icons.restaurant_menu,
+            'Add Menu',
+            'Add food items, prices and categories',
+            () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const AddMenuPage(),
+                ),
+              );
+            },
+          ),
+
+          _partnerTile(
+            context,
+            Icons.menu_book,
+            'My Menu',
+            'View and manage your menu',
+            () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('My Menu coming soon.'),
+                ),
+              );
+            },
+          ),
+
+          _partnerTile(
+            context,
+            Icons.receipt_long,
+            'New Orders',
+            'Manage customer orders',
+            () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Orders system coming soon.'),
+                ),
+              );
+            },
+          ),
+
+          _partnerTile(
+            context,
+            Icons.history,
+            'Order History',
+            'View completed orders',
+            () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Order history coming soon.'),
+                ),
+              );
+            },
+          ),
+
+          const SizedBox(height: 10),
+
+          OutlinedButton.icon(
+            onPressed: () {
+              Navigator.pop(context);
+            },
+            icon: const Icon(Icons.logout),
+            label: const Text('Logout'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _partnerTile(
+    BuildContext context,
+    IconData icon,
+    String title,
+    String subtitle,
+    VoidCallback onTap,
+  ) {
+    return Card(
+      elevation: 0,
+      margin: const EdgeInsets.only(bottom: 12),
+      child: ListTile(
+        contentPadding: const EdgeInsets.all(10),
+        leading: CircleAvatar(
+          radius: 27,
+          backgroundColor: Colors.deepOrange.shade50,
+          child: Icon(
+            icon,
+            color: Colors.deepOrange,
+            size: 27,
+          ),
+        ),
+        title: Text(
+          title,
+          style: const TextStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        subtitle: Text(subtitle),
+        trailing: const Icon(
+          Icons.arrow_forward_ios,
+          size: 17,
+        ),
+        onTap: onTap,
+      ),
+    );
+  }
+}
+
+class AddHotelPage extends StatefulWidget {
+  const AddHotelPage({super.key});
+
+  @override
+  State<AddHotelPage> createState() => _AddHotelPageState();
+}
+
+class _AddHotelPageState extends State<AddHotelPage> {
+  final hotelName = TextEditingController();
+  final location = TextEditingController();
+  final phone = TextEditingController();
+
+  @override
+  void dispose() {
+    hotelName.dispose();
+    location.dispose();
+    phone.dispose();
+    super.dispose();
+  }
+
+  void saveHotel() {
+    if (hotelName.text.trim().isEmpty ||
+        location.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Please enter hotel name and location.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Hotel saved. Firebase database will be connected next.',
+        ),
+      ),
+    );
+  }
+
+  Widget field(
+    TextEditingController controller,
+    String label,
+    IconData icon, {
+    TextInputType? keyboard,
+  }) {
+    return TextField(
+      controller: controller,
+      keyboardType: keyboard,
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon),
+        border: const OutlineInputBorder(),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Add Hotel'),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(20),
+        children: [
+          const Text(
+            'Hotel Information',
+            style: TextStyle(
+              fontSize: 23,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          field(
+            hotelName,
+            'Hotel Name',
+            Icons.storefront,
+          ),
+
+          const SizedBox(height: 14),
+
+          field(
+            location,
+            'Hotel Location',
+            Icons.location_on,
+          ),
+
+          const SizedBox(height: 14),
+
+          field(
+            phone,
+            'Contact Number',
+            Icons.phone,
+            keyboard: TextInputType.phone,
+          ),
+
+          const SizedBox(height: 25),
+
+          SizedBox(
+            height: 52,
+            child: ElevatedButton.icon(
+              onPressed: saveHotel,
+              icon: const Icon(Icons.save),
+              label: const Text(
+                'Save Hotel',
+                style: TextStyle(fontSize: 17),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class AddMenuPage extends StatefulWidget {
+  const AddMenuPage({super.key});
+
+  @override
+  State<AddMenuPage> createState() => _AddMenuPageState();
+}
+
+class _AddMenuPageState extends State<AddMenuPage> {
+  final itemName = TextEditingController();
+  final price = TextEditingController();
+  final description = TextEditingController();
+
+  String category = 'Veg';
+
+  final List<String> categories = [
+    'Veg',
+    'Non-Veg',
+    'Biryani',
+    'Chicken',
+    'Mutton',
+    'Thali',
+    'Fast Food',
+    'Drinks',
+  ];
+
+  @override
+  void dispose() {
+    itemName.dispose();
+    price.dispose();
+    description.dispose();
+    super.dispose();
+  }
+
+  void addMenuItem() {
+    if (itemName.text.trim().isEmpty ||
+        price.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Please enter food name and price.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          '${itemName.text.trim()} added to menu.',
+        ),
+      ),
+    );
+
+    itemName.clear();
+    price.clear();
+    description.clear();
+
+    setState(() {
+      category = 'Veg';
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Add Menu Item'),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(20),
+        children: [
+          Container(
+            height: 130,
+            decoration: BoxDecoration(
+              color: Colors.deepOrange.shade50,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: const Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.add_a_photo,
+                  size: 42,
+                  color: Colors.deepOrange,
+                ),
+                SizedBox(height: 8),
+                Text(
+                  'Add Food Photo',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 22),
+
+          TextField(
+            controller: itemName,
+            decoration: const InputDecoration(
+              labelText: 'Food Item Name',
+              prefixIcon: Icon(Icons.restaurant),
+              border: OutlineInputBorder(),
+            ),
+          ),
+
+          const SizedBox(height: 14),
+
+          TextField(
+            controller: price,
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(
+              labelText: 'Price',
+              prefixIcon: Icon(Icons.currency_rupee),
+              border: OutlineInputBorder(),
+            ),
+          ),
+
+          const SizedBox(height: 14),
+
+          DropdownButtonFormField<String>(
+            value: category,
+            decoration: const InputDecoration(
+              labelText: 'Category',
+              prefixIcon: Icon(Icons.category),
+              border: OutlineInputBorder(),
+            ),
+            items: categories.map((item) {
+              return DropdownMenuItem<String>(
+                value: item,
+                child: Text(item),
+              );
+            }).toList(),
+            onChanged: (value) {
+              if (value != null) {
+                setState(() {
+                  category = value;
+                });
+              }
+            },
+          ),
+
+          const SizedBox(height: 14),
+
+          TextField(
+            controller: description,
+            maxLines: 3,
+            decoration: const InputDecoration(
+              labelText: 'Description',
+              prefixIcon: Icon(Icons.description),
+              border: OutlineInputBorder(),
+              alignLabelWithHint: true,
+            ),
+          ),
+
+          const SizedBox(height: 25),
+
+          SizedBox(
+            height: 52,
+            child: ElevatedButton.icon(
+              onPressed: addMenuItem,
+              icon: const Icon(Icons.add),
+              label: const Text(
+                'Add Menu Item',
+                style: TextStyle(fontSize: 17),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
