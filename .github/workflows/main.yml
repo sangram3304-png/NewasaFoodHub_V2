@@ -23,18 +23,30 @@ jobs:
       - name: Create fresh Flutter project
         run: |
           flutter create build_project
-          cp -r build_project/android .
-          cp -r build_project/ios .
-          cp -r build_project/web .
-          cp -r build_project/linux .
-          cp -r build_project/macos .
-          cp -r build_project/windows .
-          cp build_project/pubspec.yaml .
-          cp build_project/pubspec.lock .
-          mkdir -p lib
-          
+
+          cp -r build_project/android/* android/
+          cp -r build_project/ios/* ios/ 2>/dev/null || true
+          cp -r build_project/web/* web/ 2>/dev/null || true
+          cp -r build_project/linux/* linux/ 2>/dev/null || true
+          cp -r build_project/macos/* macos/ 2>/dev/null || true
+          cp -r build_project/windows/* windows/ 2>/dev/null || true
+
+      - name: Copy Firebase configuration
+        run: |
+          mkdir -p android/app
+          cp android/app/google-services.json build_project/android/app/google-services.json 2>/dev/null || true
+
+      - name: Restore Firebase configuration
+        run: |
+          if [ -f android/app/google-services.json ]; then
+            echo "google-services.json found"
+          else
+            echo "google-services.json not found"
+          fi
+
       - name: Copy app code
         run: |
+          mkdir -p lib
           if [ -f lib/main.dart ]; then
             echo "Using existing lib/main.dart"
           else
