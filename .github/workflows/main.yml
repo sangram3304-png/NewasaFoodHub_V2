@@ -28,28 +28,32 @@ jobs:
         run: |
           cp android/app/google-services.json build_project/android/app/google-services.json
 
-      - name: Set Android minimum SDK
+      - name: Force Android minSdk to 23
         run: |
           python3 - <<'PY'
           from pathlib import Path
+          import re
 
           p = Path("build_project/android/app/build.gradle")
           text = p.read_text()
 
-          text = text.replace(
-              "minSdkVersion flutter.minSdkVersion",
-              "minSdkVersion 23"
+          text = re.sub(
+              r'(?m)^\s*minSdkVersion\s+.*$',
+              '        minSdkVersion 23',
+              text
           )
 
-          text = text.replace(
-              "minSdkVersion = flutter.minSdkVersion",
-              "minSdkVersion = 23"
+          text = re.sub(
+              r'(?m)^\s*minSdk\s*=\s*.*$',
+              '        minSdk = 23',
+              text
           )
 
           p.write_text(text)
           PY
 
-          grep -n "minSdk" build_project/android/app/build.gradle
+          echo "Generated project minSdk:"
+          grep -n -E "minSdk|minSdkVersion" build_project/android/app/build.gradle
 
       - name: Replace Android project
         run: |
@@ -70,12 +74,37 @@ jobs:
         run: |
           flutter pub get
 
-      - name: Verify final Android minSdk
+      - name: Force final minSdk to 23
         run: |
-          grep -n "minSdk" android/app/build.gradle
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          p = Path("android/app/build.gradle")
+          text = p.read_text()
+
+          text = re.sub(
+              r'(?m)^\s*minSdkVersion\s+.*$',
+              '        minSdkVersion 23',
+              text
+          )
+
+          text = re.sub(
+              r'(?m)^\s*minSdk\s*=\s*.*$',
+              '        minSdk = 23',
+              text
+          )
+
+          p.write_text(text)
+          PY
+
+          echo "Final Android minSdk:"
+          grep -n -E "minSdk|minSdkVersion" android/app/build.gradle
 
       - name: Build APK
         run: |
+          flutter clean
+          flutter pub get
           flutter build apk --release
 
       - name: Upload APK
