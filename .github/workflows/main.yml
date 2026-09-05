@@ -11,16 +11,26 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.24.5'
-          channel: 'stable'
+          channel: stable
 
-      - name: Install dependencies
+      - name: Create Flutter project structure
+        run: |
+          flutter create --project-name newasa_food_hub temp_app
+          cp -r temp_app/android .
+          cp -r temp_app/ios .
+          cp -r temp_app/web .
+          cp -r temp_app/test .
+          cp temp_app/analysis_options.yaml .
+          rm -rf temp_app
+
+      - name: Get dependencies
         run: flutter pub get
 
       - name: Build APK
