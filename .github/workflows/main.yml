@@ -19,16 +19,10 @@ jobs:
         with:
           flutter-version: '3.24.5'
           channel: stable
+          cache: true
 
-      - name: Create Flutter project structure
-        run: |
-          flutter create --project-name newasa_food_hub temp_app
-          cp -r temp_app/android .
-          cp -r temp_app/ios .
-          cp -r temp_app/web .
-          cp -r temp_app/test .
-          cp temp_app/analysis_options.yaml .
-          rm -rf temp_app
+      - name: Check Flutter
+        run: flutter --version
 
       - name: Get dependencies
         run: flutter pub get
