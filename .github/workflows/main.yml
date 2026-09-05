@@ -26,7 +26,44 @@ jobs:
 
       - name: Add Firebase configuration
         run: |
-          cp android/app/google-services.json build_project/android/app/google-services.json
+          mkdir -p build_project/android/app
+
+          if [ -f google-services.json ]; then
+            cp google-services.json build_project/android/app/google-services.json
+          elif [ -f android/app/google-services.json ]; then
+            cp android/app/google-services.json build_project/android/app/google-services.json
+          else
+            echo "ERROR: google-services.json not found"
+            exit 1
+          fi
+
+      - name: Configure Firebase Google Services
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          p = Path("build_project/android/app/build.gradle")
+          text = p.read_text()
+
+          if "com.google.gms.google-services" not in text:
+              text = text.replace(
+                  "plugins {",
+                  "plugins {\n    id 'com.google.gms.google-services'"
+              )
+
+          p.write_text(text)
+
+          root = Path("build_project/android/build.gradle")
+          text = root.read_text()
+
+          if "com.google.gms:google-services" not in text:
+              text = text.replace(
+                  "buildscript {",
+                  "buildscript {\n    dependencies {\n        classpath 'com.google.gms:google-services:4.4.2'\n    }"
+              )
+
+          root.write_text(text)
+          PY
 
       - name: Force Android minSdk to 23
         run: |
@@ -52,9 +89,6 @@ jobs:
           p.write_text(text)
           PY
 
-          echo "Generated project minSdk:"
-          grep -n -E "minSdk|minSdkVersion" build_project/android/app/build.gradle
-
       - name: Replace Android project
         run: |
           rm -rf android
@@ -73,33 +107,6 @@ jobs:
       - name: Get dependencies
         run: |
           flutter pub get
-
-      - name: Force final minSdk to 23
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          import re
-
-          p = Path("android/app/build.gradle")
-          text = p.read_text()
-
-          text = re.sub(
-              r'(?m)^\s*minSdkVersion\s+.*$',
-              '        minSdkVersion 23',
-              text
-          )
-
-          text = re.sub(
-              r'(?m)^\s*minSdk\s*=\s*.*$',
-              '        minSdk = 23',
-              text
-          )
-
-          p.write_text(text)
-          PY
-
-          echo "Final Android minSdk:"
-          grep -n -E "minSdk|minSdkVersion" android/app/build.gradle
 
       - name: Build APK
         run: |
