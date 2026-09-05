@@ -24,32 +24,22 @@ jobs:
         run: |
           flutter create build_project
 
-          cp -r build_project/android/* android/
-          cp -r build_project/ios/* ios/ 2>/dev/null || true
-          cp -r build_project/web/* web/ 2>/dev/null || true
-          cp -r build_project/linux/* linux/ 2>/dev/null || true
-          cp -r build_project/macos/* macos/ 2>/dev/null || true
-          cp -r build_project/windows/* windows/ 2>/dev/null || true
+          # Firebase configuration
+          cp android/app/google-services.json build_project/android/app/google-services.json
 
-      - name: Copy Firebase configuration
-        run: |
-          mkdir -p android/app
-          cp android/app/google-services.json build_project/android/app/google-services.json 2>/dev/null || true
+          # Firebase Auth requires Android API 23+
+          sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 23/' build_project/android/app/build.gradle.kts
 
-      - name: Restore Firebase configuration
-        run: |
-          if [ -f android/app/google-services.json ]; then
-            echo "google-services.json found"
-          else
-            echo "google-services.json not found"
-          fi
+          # Use the fresh Android project
+          rm -rf android
+          cp -r build_project/android android
 
       - name: Copy app code
         run: |
-          mkdir -p lib
           if [ -f lib/main.dart ]; then
             echo "Using existing lib/main.dart"
           else
+            mkdir -p lib
             cp build_project/lib/main.dart lib/main.dart
           fi
 
