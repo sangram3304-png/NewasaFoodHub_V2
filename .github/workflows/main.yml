@@ -108,6 +108,12 @@ jobs:
         run: |
           flutter pub get
 
+      - name: Get SHA-1 and SHA-256
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew signingReport
+
       - name: Build Release APK
         run: |
           flutter clean
