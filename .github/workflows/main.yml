@@ -22,7 +22,7 @@ jobs:
 
       - name: Create Android platform
         run: |
-          flutter create --platforms=android .
+          flutter create --platforms=android --project-name=newasafoodhub_v2 .
 
       - name: Check Firebase configuration
         run: |
@@ -30,6 +30,7 @@ jobs:
             echo "ERROR: android/app/google-services.json not found"
             exit 1
           fi
+
           echo "Firebase configuration found."
 
       - name: Configure Google Services
@@ -38,6 +39,11 @@ jobs:
           from pathlib import Path
 
           app_gradle = Path("android/app/build.gradle")
+
+          if not app_gradle.exists():
+              print("ERROR: android/app/build.gradle not found")
+              raise SystemExit(1)
+
           text = app_gradle.read_text()
 
           if "com.google.gms.google-services" not in text:
@@ -49,14 +55,17 @@ jobs:
           app_gradle.write_text(text)
 
           root_gradle = Path("android/build.gradle")
-          text = root_gradle.read_text()
 
-          if "com.google.gms:google-services" not in text:
-              text = """buildscript {
+          if root_gradle.exists():
+              text = root_gradle.read_text()
+
+              if "com.google.gms:google-services" not in text:
+                  text = """buildscript {
               repositories {
                   google()
                   mavenCentral()
               }
+
               dependencies {
                   classpath 'com.google.gms:google-services:4.4.2'
               }
@@ -64,7 +73,9 @@ jobs:
 
           """ + text
 
-          root_gradle.write_text(text)
+              root_gradle.write_text(text)
+
+          print("Google Services configured.")
           PY
 
       - name: Set Android minSdk
@@ -89,6 +100,8 @@ jobs:
           )
 
           p.write_text(text)
+
+          print("minSdk set to 23.")
           PY
 
       - name: Get Flutter dependencies
