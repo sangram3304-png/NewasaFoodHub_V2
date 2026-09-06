@@ -20,15 +20,18 @@ jobs:
           flutter-version: '3.24.5'
           channel: stable
 
-      - name: Backup Firebase configuration
+      - name: Check Firebase configuration
         run: |
-          if [ -f android/app/google-services.json ]; then
-            cp android/app/google-services.json /tmp/google-services.json
-            echo "Firebase configuration found."
-          else
+          if [ ! -f android/app/google-services.json ]; then
             echo "ERROR: android/app/google-services.json not found"
             exit 1
           fi
+
+          echo "Firebase configuration found."
+
+      - name: Backup Firebase configuration
+        run: |
+          cp android/app/google-services.json /tmp/google-services.json
 
       - name: Create Android platform
         run: |
@@ -41,6 +44,7 @@ jobs:
         run: |
           mkdir -p android/app
           cp /tmp/google-services.json android/app/google-services.json
+
           echo "Firebase configuration restored."
 
       - name: Configure Google Services
@@ -69,6 +73,7 @@ jobs:
                   google()
                   mavenCentral()
               }
+
               dependencies {
                   classpath 'com.google.gms:google-services:4.4.2'
               }
@@ -116,10 +121,5 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: NewasaFoodHub-APK
-          path: build/app/outputs/flutter-apk/app-release.apk
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: NewasaFoodHub-APK
+          name: NewasaFoodHub-APK-${{ github.run_number }}
           path: build/app/outputs/flutter-apk/app-release.apk
