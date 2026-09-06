@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1045295038166",
+    "project_id": "newasa-food-hub",
+    "storage_bucket": "newasa-food-hub.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1045295038166:android:6719773429692edc265377",
+        "android_client_info": {
+          "package_name": "com.newasafoodhub.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAkRP_2aGNKaumDh1N-a79rtIKnV7LARlc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
