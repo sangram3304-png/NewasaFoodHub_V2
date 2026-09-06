@@ -11,117 +11,58 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1. Checkout
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # 2. Flutter setup
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.24.5'
           channel: stable
+          cache: true
 
-      - name: Create Android platform
+      # 3. Flutter dependencies
+      - name: Flutter Pub Get
+        run: flutter pub get
+
+      # 4. Create Android Debug Keystore
+      - name: Generate Android Debug Keystore
         run: |
-          flutter create --platforms=android --project-name=newasafoodhub_v2 .
+          mkdir -p ~/.config/.android
 
-      - name: Check Firebase configuration
-        run: |
-          if [ ! -f android/app/google-services.json ]; then
-            echo "ERROR: android/app/google-services.json not found"
-            exit 1
-          fi
+          keytool -genkeypair \
+            -v \
+            -keystore ~/.config/.android/debug.keystore \
+            -storepass android \
+            -alias AndroidDebugKey \
+            -keypass android \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -dname "CN=Android Debug,O=Android,C=US"
 
-          echo "Firebase configuration found."
-
-      - name: Configure Google Services
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-
-          app_gradle = Path("android/app/build.gradle")
-
-          if not app_gradle.exists():
-              print("ERROR: android/app/build.gradle not found")
-              raise SystemExit(1)
-
-          text = app_gradle.read_text()
-
-          if "com.google.gms.google-services" not in text:
-              text = text.replace(
-                  "plugins {",
-                  "plugins {\n    id 'com.google.gms.google-services'"
-              )
-
-          app_gradle.write_text(text)
-
-          root_gradle = Path("android/build.gradle")
-
-          if root_gradle.exists():
-              text = root_gradle.read_text()
-
-              if "com.google.gms:google-services" not in text:
-                  text = """buildscript {
-              repositories {
-                  google()
-                  mavenCentral()
-              }
-
-              dependencies {
-                  classpath 'com.google.gms:google-services:4.4.2'
-              }
-          }
-
-          """ + text
-
-              root_gradle.write_text(text)
-
-          print("Google Services configured.")
-          PY
-
-      - name: Set Android minSdk
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          import re
-
-          p = Path("android/app/build.gradle")
-          text = p.read_text()
-
-          text = re.sub(
-              r'(?m)^\s*minSdkVersion\s+.*$',
-              '        minSdkVersion 23',
-              text
-          )
-
-          text = re.sub(
-              r'(?m)^\s*minSdk\s*=\s*.*$',
-              '        minSdk = 23',
-              text
-          )
-
-          p.write_text(text)
-
-          print("minSdk set to 23.")
-          PY
-
-      - name: Get Flutter dependencies
-        run: |
-          flutter pub get
-
+      # 5. Get SHA-1 and SHA-256
       - name: Get SHA-1 and SHA-256
         run: |
-          cd android
-          chmod +x gradlew
-          ./gradlew signingReport
+          echo "========== SHA-1 & SHA-256 =========="
 
+          keytool -list -v \
+            -keystore ~/.config/.android/debug.keystore \
+            -alias AndroidDebugKey \
+            -storepass android \
+            -keypass android
+
+          echo "======================================"
+
+      # 6. Build APK
       - name: Build Release APK
-        run: |
-          flutter clean
-          flutter pub get
-          flutter build apk --release
+        run: flutter build apk --release
 
+      # 7. Upload APK
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: NewasaFoodHub-APK-${{ github.run_number }}
+          name: newasa-food-hub-apk
           path: build/app/outputs/flutter-apk/app-release.apk
