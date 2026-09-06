@@ -20,29 +20,36 @@ jobs:
           flutter-version: '3.24.5'
           channel: stable
 
-      - name: Create fresh Flutter project
+      - name: Check Firebase configuration
         run: |
-          flutter create build_project
-
-      - name: Add Firebase configuration
-        run: |
-          mkdir -p build_project/android/app
-
-          if [ -f google-services.json ]; then
-            cp google-services.json build_project/android/app/google-services.json
-          elif [ -f android/app/google-services.json ]; then
-            cp android/app/google-services.json build_project/android/app/google-services.json
-          else
-            echo "ERROR: google-services.json not found"
+          if [ ! -f android/app/google-services.json ]; then
+            echo "ERROR: android/app/google-services.json not found"
             exit 1
           fi
+
+          echo "Firebase configuration found."
+
+      - name: Create Flutter Android files
+        run: |
+          flutter create --platforms=android .
+
+      - name: Restore Firebase configuration
+        run: |
+          echo "Checking Firebase configuration..."
+
+          if [ ! -f android/app/google-services.json ]; then
+            echo "ERROR: google-services.json was removed."
+            exit 1
+          fi
+
+          echo "Firebase configuration is ready."
 
       - name: Configure Firebase Google Services
         run: |
           python3 - <<'PY'
           from pathlib import Path
 
-          p = Path("build_project/android/app/build.gradle")
+          p = Path("android/app/build.gradle")
           text = p.read_text()
 
           if "com.google.gms.google-services" not in text:
@@ -53,25 +60,37 @@ jobs:
 
           p.write_text(text)
 
-          root = Path("build_project/android/build.gradle")
+          root = Path("android/build.gradle")
           text = root.read_text()
 
           if "com.google.gms:google-services" not in text:
-              text = text.replace(
-                  "buildscript {",
-                  "buildscript {\n    dependencies {\n        classpath 'com.google.gms:google-services:4.4.2'\n    }"
-              )
+              if "buildscript {" in text:
+                  text = text.replace(
+                      "buildscript {",
+                      """buildscript {
+              dependencies {
+                  classpath 'com.google.gms:google-services:4.4.2'
+              }"""
+                  )
+              else:
+                  text = """buildscript {
+              dependencies {
+                  classpath 'com.google.gms:google-services:4.4.2'
+              }
+          }
+
+          """ + text
 
           root.write_text(text)
           PY
 
-      - name: Force Android minSdk to 23
+      - name: Set Android minSdk
         run: |
           python3 - <<'PY'
           from pathlib import Path
           import re
 
-          p = Path("build_project/android/app/build.gradle")
+          p = Path("android/app/build.gradle")
           text = p.read_text()
 
           text = re.sub(
@@ -89,26 +108,11 @@ jobs:
           p.write_text(text)
           PY
 
-      - name: Replace Android project
-        run: |
-          rm -rf android
-          cp -r build_project/android android
-
-      - name: Prepare app code
-        run: |
-          mkdir -p lib
-
-          if [ -f lib/main.dart ]; then
-            echo "Using existing lib/main.dart"
-          else
-            cp build_project/lib/main.dart lib/main.dart
-          fi
-
-      - name: Get dependencies
+      - name: Get Flutter dependencies
         run: |
           flutter pub get
 
-      - name: Build APK
+      - name: Build Release APK
         run: |
           flutter clean
           flutter pub get
