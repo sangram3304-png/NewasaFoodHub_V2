@@ -1,93 +1,366 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-class HomePage extends StatelessWidget {
+import 'services/firestore_service.dart';
+
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
-  final List<Map<String, dynamic>> hotels = const [
-    {
-      'name': 'Hotel Rajmudra',
-      'location': 'Nevasa Phata',
-      'rating': '4.5',
-      'time': '25-35 min',
-      'image': '🍗',
-      'tag': 'Popular',
-    },
-    {
-      'name': 'Newasa Family Restaurant',
-      'location': 'Newasa',
-      'rating': '4.3',
-      'time': '30-40 min',
-      'image': '🍛',
-      'tag': 'Recommended',
-    },
-    {
-      'name': 'Royal Biryani',
-      'location': 'Newasa',
-      'rating': '4.4',
-      'time': '25-35 min',
-      'image': '🍚',
-      'tag': 'Biryani',
-    },
-    {
-      'name': 'Food Corner',
-      'location': 'Newasa',
-      'rating': '4.2',
-      'time': '30-40 min',
-      'image': '🍔',
-      'tag': 'Fast Food',
-    },
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  final FirestoreService _firestoreService = FirestoreService();
+
+  String searchText = '';
+  String selectedCategory = 'All';
+
+  final List<Map<String, dynamic>> categories = [
+    {'name': 'All', 'icon': Icons.restaurant},
+    {'name': 'Biryani', 'icon': Icons.rice_bowl},
+    {'name': 'Chicken', 'icon': Icons.set_meal},
+    {'name': 'Veg', 'icon': Icons.eco},
+    {'name': 'Thali', 'icon': Icons.lunch_dining},
+    {'name': 'Fast Food', 'icon': Icons.fastfood},
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F8F8),
+      backgroundColor: Colors.grey.shade50,
       body: SafeArea(
         child: CustomScrollView(
           slivers: [
-            SliverToBoxAdapter(child: _header(context)),
-            SliverToBoxAdapter(child: _searchBox()),
-            SliverToBoxAdapter(child: _offerBanner()),
-            SliverToBoxAdapter(child: _categories()),
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(18, 22, 18, 12),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                padding: const EdgeInsets.fromLTRB(18, 18, 18, 0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.location_on,
+                          color: Colors.deepOrange,
+                        ),
+                        const SizedBox(width: 5),
+                        const Expanded(
+                          child: Text(
+                            'DELIVER TO\nNewasa',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () {},
+                          icon: const Icon(
+                            Icons.notifications_none,
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 15),
+
                     const Text(
-                      'Nearby Hotels',
+                      'Newasa Food Hub',
                       style: TextStyle(
-                        fontSize: 22,
+                        fontSize: 28,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const AllHotelsPage(),
-                          ),
-                        );
-                      },
-                      child: const Text('View All'),
+
+                    const SizedBox(height: 5),
+
+                    Text(
+                      'Newasa ची चव, आता घरपोच! 🍔',
+                      style: TextStyle(
+                        color: Colors.grey.shade700,
+                        fontSize: 15,
+                      ),
                     ),
+
+                    const SizedBox(height: 18),
+
+                    TextField(
+                      onChanged: (value) {
+                        setState(() {
+                          searchText = value.toLowerCase();
+                        });
+                      },
+                      decoration: InputDecoration(
+                        hintText: 'Food किंवा Hotel शोधा',
+                        prefixIcon: const Icon(Icons.search),
+                        filled: true,
+                        fillColor: Colors.white,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 18),
+
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20),
+                        gradient: const LinearGradient(
+                          colors: [
+                            Colors.deepOrange,
+                            Colors.orange,
+                          ],
+                        ),
+                      ),
+                      child: const Column(
+                        crossAxisAlignment:
+                            CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '🎉 खास ऑफर',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          SizedBox(height: 5),
+                          Text(
+                            'पहिल्या ऑर्डरवर खास ऑफर!',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          SizedBox(height: 5),
+                          Text(
+                            'Order करा आणि स्वादिष्ट जेवणाचा आनंद घ्या.',
+                            style: TextStyle(
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 22),
+
+                    const Text(
+                      'Categories',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    SizedBox(
+                      height: 90,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: categories.length,
+                        itemBuilder: (context, index) {
+                          final category = categories[index];
+                          final isSelected =
+                              selectedCategory ==
+                                  category['name'];
+
+                          return GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                selectedCategory =
+                                    category['name'];
+                              });
+                            },
+                            child: Container(
+                              width: 75,
+                              margin: const EdgeInsets.only(
+                                right: 12,
+                              ),
+                              child: Column(
+                                children: [
+                                  Container(
+                                    width: 58,
+                                    height: 58,
+                                    decoration: BoxDecoration(
+                                      color: isSelected
+                                          ? Colors.deepOrange
+                                          : Colors.orange.shade100,
+                                      borderRadius:
+                                          BorderRadius.circular(18),
+                                    ),
+                                    child: Icon(
+                                      category['icon'],
+                                      color: isSelected
+                                          ? Colors.white
+                                          : Colors.deepOrange,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 5),
+                                  Text(
+                                    category['name'],
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: isSelected
+                                          ? FontWeight.bold
+                                          : FontWeight.normal,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    const Text(
+                      'Nearby Hotels',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+
+                    const SizedBox(height: 10),
                   ],
                 ),
               ),
             ),
-            SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 18),
-              sliver: SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    return _hotelCard(context, hotels[index]);
-                  },
-                  childCount: hotels.length,
-                ),
-              ),
+
+            // ================= FIRESTORE HOTELS =================
+
+            StreamBuilder<
+                QuerySnapshot<Map<String, dynamic>>>(
+              stream:
+                  _firestoreService.restaurantsStream(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState ==
+                    ConnectionState.waiting) {
+                  return const SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.all(30),
+                      child: Center(
+                        child: CircularProgressIndicator(),
+                      ),
+                    ),
+                  );
+                }
+
+                if (snapshot.hasError) {
+                  return SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Text(
+                        'Firebase Error:\n${snapshot.error}',
+                        style: const TextStyle(
+                          color: Colors.red,
+                        ),
+                      ),
+                    ),
+                  );
+                }
+
+                final restaurants =
+                    snapshot.data?.docs ?? [];
+
+                final filteredRestaurants =
+                    restaurants.where((doc) {
+                  final data = doc.data();
+
+                  final name =
+                      (data['name'] ?? '')
+                          .toString()
+                          .toLowerCase();
+
+                  final location =
+                      (data['location'] ?? '')
+                          .toString()
+                          .toLowerCase();
+
+                  if (searchText.isEmpty) {
+                    return true;
+                  }
+
+                  return name.contains(searchText) ||
+                      location.contains(searchText);
+                }).toList();
+
+                if (filteredRestaurants.isEmpty) {
+                  return const SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.all(30),
+                      child: Center(
+                        child: Column(
+                          children: [
+                            Icon(
+                              Icons.restaurant,
+                              size: 60,
+                              color: Colors.grey,
+                            ),
+                            SizedBox(height: 10),
+                            Text(
+                              'सध्या कोणतेही Hotel उपलब्ध नाही.',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                }
+
+                return SliverPadding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                  ),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        final doc =
+                            filteredRestaurants[index];
+
+                        final data = doc.data();
+
+                        final name =
+                            data['name']?.toString() ??
+                                'Hotel';
+
+                        final location =
+                            data['location']?.toString() ??
+                                'Newasa';
+
+                        final phone =
+                            data['phone']?.toString() ?? '';
+
+                        return _hotelCard(
+                          context,
+                          name,
+                          location,
+                          phone,
+                          doc.id,
+                        );
+                      },
+                      childCount:
+                          filteredRestaurants.length,
+                    ),
+                  ),
+                );
+              },
             ),
+
             const SliverToBoxAdapter(
               child: SizedBox(height: 30),
             ),
@@ -97,340 +370,127 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  Widget _header(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 10),
-      child: Row(
-        children: [
-          Container(
-            height: 48,
-            width: 48,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(15),
-              color: Colors.deepOrange,
-            ),
-            child: const Icon(
-              Icons.restaurant,
-              color: Colors.white,
-              size: 27,
-            ),
-          ),
-          const SizedBox(width: 12),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'DELIVER TO',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.grey,
-                  ),
-                ),
-                SizedBox(height: 2),
-                Row(
-                  children: [
-                    Icon(
-                      Icons.location_on,
-                      size: 17,
-                      color: Colors.deepOrange,
-                    ),
-                    SizedBox(width: 3),
-                    Text(
-                      'Newasa',
-                      style: TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    Icon(Icons.keyboard_arrow_down),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.notifications_none, size: 28),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _searchBox() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(18, 8, 18, 16),
-      child: TextField(
-        decoration: InputDecoration(
-          hintText: 'Search food or hotels...',
-          prefixIcon: const Icon(Icons.search),
-          suffixIcon: const Icon(Icons.tune),
-          filled: true,
-          fillColor: Colors.white,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(17),
-            borderSide: BorderSide.none,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _offerBanner() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 18),
-      child: Container(
-        height: 150,
-        width: double.infinity,
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(24),
-          gradient: const LinearGradient(
-            colors: [
-              Colors.deepOrange,
-              Colors.orange,
-            ],
-          ),
-        ),
-        child: const Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    'SPECIAL OFFER',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1,
-                    ),
-                  ),
-                  SizedBox(height: 6),
-                  Text(
-                    'Delicious food\nat your doorstep!',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 21,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Text(
-              '🍗',
-              style: TextStyle(fontSize: 65),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _categories() {
-    final categories = [
-      'All',
-      'Biryani',
-      'Chicken',
-      'Veg',
-      'Thali',
-      'Fast Food',
-    ];
-
-    return SizedBox(
-      height: 105,
-      child: ListView.builder(
-        padding: const EdgeInsets.fromLTRB(18, 18, 18, 8),
-        scrollDirection: Axis.horizontal,
-        itemCount: categories.length,
-        itemBuilder: (context, index) {
-          return Container(
-            width: 82,
-            margin: const EdgeInsets.only(right: 10),
-            decoration: BoxDecoration(
-              color: index == 0 ? Colors.deepOrange : Colors.white,
-              borderRadius: BorderRadius.circular(17),
-              border: Border.all(
-                color: index == 0
-                    ? Colors.deepOrange
-                    : Colors.grey.shade200,
-              ),
-            ),
-            child: Center(
-              child: Text(
-                categories[index],
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
-                  color: index == 0 ? Colors.white : Colors.black87,
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
+  // ================= HOTEL CARD =================
 
   Widget _hotelCard(
     BuildContext context,
-    Map<String, dynamic> hotel,
+    String name,
+    String location,
+    String phone,
+    String restaurantId,
   ) {
     return Card(
-      elevation: 0,
-      margin: const EdgeInsets.only(bottom: 16),
-      color: Colors.white,
+      margin: const EdgeInsets.only(bottom: 15),
+      elevation: 2,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(18),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              height: 150,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: Colors.orange.shade50,
-                borderRadius: BorderRadius.circular(17),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => HotelMenuPage(
+                restaurantId: restaurantId,
+                restaurantName: name,
               ),
-              child: Center(
-                child: Text(
-                  hotel['image'],
-                  style: const TextStyle(fontSize: 75),
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              hotel['name'],
-              style: const TextStyle(
-                fontSize: 19,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-            const SizedBox(height: 5),
-            Row(
-              children: [
-                const Icon(
-                  Icons.location_on_outlined,
-                  size: 17,
-                  color: Colors.grey,
-                ),
-                const SizedBox(width: 3),
-                Text(
-                  hotel['location'],
-                  style: const TextStyle(color: Colors.grey),
-                ),
-                const SizedBox(width: 12),
-                const Icon(
-                  Icons.star,
-                  size: 16,
-                  color: Colors.orange,
-                ),
-                const SizedBox(width: 3),
-                Text(
-                  hotel['rating'],
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              height: 46,
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => HotelMenuPage(
-                        hotelName: hotel['name'],
-                        location: hotel['location'],
-                      ),
-                    ),
-                  );
-                },
-                icon: const Icon(Icons.restaurant_menu),
-                label: const Text(
-                  'View Menu',
-                  style: TextStyle(fontSize: 16),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ================= ALL HOTELS =================
-
-class AllHotelsPage extends StatelessWidget {
-  const AllHotelsPage({super.key});
-
-  final List<String> names = const [
-    'Hotel Rajmudra',
-    'Newasa Family Restaurant',
-    'Royal Biryani',
-    'Food Corner',
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'All Hotels',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-      ),
-      body: ListView.builder(
-        padding: const EdgeInsets.all(18),
-        itemCount: names.length,
-        itemBuilder: (context, index) {
-          return Card(
-            margin: const EdgeInsets.only(bottom: 12),
-            child: ListTile(
-              leading: CircleAvatar(
-                backgroundColor: Colors.deepOrange.shade50,
-                child: const Icon(
-                  Icons.restaurant,
-                  color: Colors.deepOrange,
-                ),
-              ),
-              title: Text(
-                names[index],
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              subtitle: const Text('Newasa • 25-35 min'),
-              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => HotelMenuPage(
-                      hotelName: names[index],
-                      location: 'Newasa',
-                    ),
-                  ),
-                );
-              },
             ),
           );
         },
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            children: [
+              Container(
+                width: 70,
+                height: 70,
+                decoration: BoxDecoration(
+                  color: Colors.orange.shade100,
+                  borderRadius:
+                      BorderRadius.circular(16),
+                ),
+                child: const Center(
+                  child: Text(
+                    '🍽️',
+                    style: TextStyle(fontSize: 35),
+                  ),
+                ),
+              ),
+
+              const SizedBox(width: 14),
+
+              Expanded(
+                child: Column(
+                  crossAxisAlignment:
+                      CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      name,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+
+                    const SizedBox(height: 5),
+
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.location_on,
+                          size: 15,
+                          color: Colors.grey,
+                        ),
+                        const SizedBox(width: 3),
+                        Expanded(
+                          child: Text(
+                            location,
+                            style: TextStyle(
+                              color:
+                                  Colors.grey.shade700,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 5),
+
+                    Row(
+                      children: const [
+                        Icon(
+                          Icons.star,
+                          size: 17,
+                          color: Colors.orange,
+                        ),
+                        SizedBox(width: 3),
+                        Text(
+                          'New',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        SizedBox(width: 12),
+                        Text(
+                          '25-35 min',
+                          style: TextStyle(
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+
+              const Icon(
+                Icons.arrow_forward_ios,
+                size: 17,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -439,128 +499,108 @@ class AllHotelsPage extends StatelessWidget {
 // ================= HOTEL MENU =================
 
 class HotelMenuPage extends StatelessWidget {
-  final String hotelName;
-  final String location;
+  final String restaurantId;
+  final String restaurantName;
 
   const HotelMenuPage({
     super.key,
-    required this.hotelName,
-    required this.location,
+    required this.restaurantId,
+    required this.restaurantName,
   });
-
-  final List<Map<String, dynamic>> menu = const [
-    {
-      'name': 'Chicken Biryani',
-      'price': 180,
-      'category': 'Biryani',
-      'emoji': '🍗',
-    },
-    {
-      'name': 'Chicken Masala',
-      'price': 150,
-      'category': 'Chicken',
-      'emoji': '🍛',
-    },
-    {
-      'name': 'Paneer Masala',
-      'price': 150,
-      'category': 'Veg',
-      'emoji': '🥘',
-    },
-    {
-      'name': 'Veg Thali',
-      'price': 120,
-      'category': 'Thali',
-      'emoji': '🍱',
-    },
-    {
-      'name': 'Chicken Thali',
-      'price': 200,
-      'category': 'Thali',
-      'emoji': '🍗',
-    },
-  ];
 
   @override
   Widget build(BuildContext context) {
+    final FirestoreService service =
+        FirestoreService();
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          hotelName,
-          style: const TextStyle(fontWeight: FontWeight.bold),
+          restaurantName,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(18),
-        children: [
-          Text(
-            hotelName,
-            style: const TextStyle(
-              fontSize: 25,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-          const SizedBox(height: 5),
-          Text(
-            location,
-            style: const TextStyle(color: Colors.grey),
-          ),
-          const SizedBox(height: 22),
-          const Text(
-            'Menu',
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 12),
-          ...menu.map(
-            (item) => Card(
-              elevation: 0,
-              margin: const EdgeInsets.only(bottom: 12),
-              child: ListTile(
-                contentPadding: const EdgeInsets.all(10),
-                leading: Container(
-                  height: 65,
-                  width: 65,
-                  decoration: BoxDecoration(
-                    color: Colors.orange.shade50,
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Center(
-                    child: Text(
-                      item['emoji'],
-                      style: const TextStyle(fontSize: 35),
-                    ),
-                  ),
-                ),
-                title: Text(
-                  item['name'],
+      body: StreamBuilder<
+          QuerySnapshot<Map<String, dynamic>>>(
+        stream: service.menuStream(restaurantId),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState ==
+              ConnectionState.waiting) {
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          }
+
+          if (snapshot.hasError) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Text(
+                  'Menu Error:\n${snapshot.error}',
                   style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
+                    color: Colors.red,
                   ),
-                ),
-                subtitle: Text(
-                  '₹${item['price']} • ${item['category']}',
-                ),
-                trailing: ElevatedButton(
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          '${item['name']} added to cart',
-                        ),
-                      ),
-                    );
-                  },
-                  child: const Text('ADD'),
                 ),
               ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
+            );
+          }
+
+          final items = snapshot.data?.docs ?? [];
+
+          if (items.isEmpty) {
+            return const Center(
+              child: Column(
+                mainAxisAlignment:
+                    MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.restaurant_menu,
+                    size: 70,
+                    color: Colors.grey,
+                  ),
+                  SizedBox(height: 12),
+                  Text(
+                    'या Hotel चा Menu अजून उपलब्ध नाही.',
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          return ListView.builder(
+            padding: const EdgeInsets.all(18),
+            itemCount: items.length,
+            itemBuilder: (context, index) {
+              final data = items[index].data();
+
+              final itemName =
+                  data['name']?.toString() ??
+                      'Food Item';
+
+              final price =
+                  data['price']?.toString() ?? '0';
+
+              final category =
+                  data['category']?.toString() ?? '';
+
+              return Card(
+                margin: const EdgeInsets.only(
+                  bottom: 12,
+                ),
+                child: ListTile(
+                  contentPadding:
+                      const EdgeInsets.all(12),
+                  leading: Container(
+                    width: 55,
+                    height: 55,
+                    decoration: BoxDecoration(
+                      color: Colors.orange.shade100,
+                      borderRadius:
+                          BorderRadius.circular(14),
+            
