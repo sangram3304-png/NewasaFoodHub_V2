@@ -23,25 +23,36 @@ jobs:
           channel: stable
           cache: true
 
-      # 3. Regenerate Android platform
+      # 3. Check Flutter project
+      - name: Check Flutter Project
+        run: |
+          echo "Project name from pubspec.yaml:"
+          grep "^name:" pubspec.yaml
+          flutter --version
+
+      # 4. Regenerate Android platform with valid project name
       - name: Regenerate Android Platform
         run: |
-          flutter create --platforms=android .
+          flutter create \
+            --platforms=android \
+            --project-name=newasa_food_hub \
+            .
 
-      # 4. Restore Firebase configuration
+      # 5. Check Firebase configuration
       - name: Check Firebase configuration
         run: |
           if [ ! -f android/app/google-services.json ]; then
             echo "ERROR: android/app/google-services.json not found"
             exit 1
           fi
+
           echo "Firebase configuration found."
 
-      # 5. Flutter dependencies
+      # 6. Flutter dependencies
       - name: Flutter Pub Get
         run: flutter pub get
 
-      # 6. Create Android Debug Keystore
+      # 7. Create Android Debug Keystore
       - name: Generate Android Debug Keystore
         run: |
           mkdir -p ~/.config/.android
@@ -57,7 +68,7 @@ jobs:
             -validity 10000 \
             -dname "CN=Android Debug,O=Android,C=US"
 
-      # 7. Get SHA-1 and SHA-256
+      # 8. Get SHA-1 and SHA-256
       - name: Get SHA-1 and SHA-256
         run: |
           echo "========== SHA-1 & SHA-256 =========="
@@ -70,11 +81,11 @@ jobs:
 
           echo "======================================"
 
-      # 8. Build Release APK
+      # 9. Build Release APK
       - name: Build Release APK
         run: flutter build apk --release
 
-      # 9. Upload APK
+      # 10. Upload APK
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
