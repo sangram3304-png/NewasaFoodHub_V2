@@ -29,46 +29,34 @@ jobs:
 
           echo "Firebase configuration found."
 
-      - name: Backup Firebase configuration
-        run: |
-          cp android/app/google-services.json /tmp/google-services.json
-
-      - name: Create Android platform
-        run: |
-          flutter create \
-            --platforms=android \
-            --project-name=newasafoodhub_v2 \
-            .
-
-      - name: Restore Firebase configuration
-        run: |
-          mkdir -p android/app
-          cp /tmp/google-services.json android/app/google-services.json
-
-          echo "Firebase configuration restored."
-
       - name: Configure Google Services
         run: |
           python3 - <<'PY'
           from pathlib import Path
 
           app_gradle = Path("android/app/build.gradle")
+
+          if not app_gradle.exists():
+              print("ERROR: android/app/build.gradle not found")
+              raise SystemExit(1)
+
           text = app_gradle.read_text()
 
           if "com.google.gms.google-services" not in text:
               text = text.replace(
                   "plugins {",
-                  """plugins {
-              id 'com.google.gms.google-services'"""
+                  "plugins {\n    id 'com.google.gms.google-services'"
               )
 
           app_gradle.write_text(text)
 
           root_gradle = Path("android/build.gradle")
-          text = root_gradle.read_text()
 
-          if "com.google.gms:google-services" not in text:
-              text = """buildscript {
+          if root_gradle.exists():
+              text = root_gradle.read_text()
+
+              if "com.google.gms:google-services" not in text:
+                  text = """buildscript {
               repositories {
                   google()
                   mavenCentral()
@@ -81,7 +69,9 @@ jobs:
 
           """ + text
 
-          root_gradle.write_text(text)
+                  root_gradle.write_text(text)
+
+          print("Google Services configured.")
           PY
 
       - name: Set Android minSdk
@@ -106,6 +96,8 @@ jobs:
           )
 
           p.write_text(text)
+
+          print("minSdk set to 23.")
           PY
 
       - name: Get Flutter dependencies
