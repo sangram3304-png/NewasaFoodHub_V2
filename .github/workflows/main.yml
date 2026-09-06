@@ -20,60 +20,55 @@ jobs:
           flutter-version: '3.24.5'
           channel: stable
 
-      - name: Check Firebase configuration
+      - name: Backup Firebase configuration
         run: |
-          if [ ! -f android/app/google-services.json ]; then
+          if [ -f android/app/google-services.json ]; then
+            cp android/app/google-services.json /tmp/google-services.json
+            echo "Firebase configuration found."
+          else
             echo "ERROR: android/app/google-services.json not found"
             exit 1
           fi
 
-          echo "Firebase configuration found."
-
-      - name: Create Flutter Android files
+      - name: Create Android platform
         run: |
-          flutter create --platforms=android .
+          flutter create \
+            --platforms=android \
+            --project-name=newasafoodhub_v2 \
+            .
 
       - name: Restore Firebase configuration
         run: |
-          echo "Checking Firebase configuration..."
+          mkdir -p android/app
+          cp /tmp/google-services.json android/app/google-services.json
+          echo "Firebase configuration restored."
 
-          if [ ! -f android/app/google-services.json ]; then
-            echo "ERROR: google-services.json was removed."
-            exit 1
-          fi
-
-          echo "Firebase configuration is ready."
-
-      - name: Configure Firebase Google Services
+      - name: Configure Google Services
         run: |
           python3 - <<'PY'
           from pathlib import Path
 
-          p = Path("android/app/build.gradle")
-          text = p.read_text()
+          app_gradle = Path("android/app/build.gradle")
+          text = app_gradle.read_text()
 
           if "com.google.gms.google-services" not in text:
               text = text.replace(
                   "plugins {",
-                  "plugins {\n    id 'com.google.gms.google-services'"
+                  """plugins {
+              id 'com.google.gms.google-services'"""
               )
 
-          p.write_text(text)
+          app_gradle.write_text(text)
 
-          root = Path("android/build.gradle")
-          text = root.read_text()
+          root_gradle = Path("android/build.gradle")
+          text = root_gradle.read_text()
 
           if "com.google.gms:google-services" not in text:
-              if "buildscript {" in text:
-                  text = text.replace(
-                      "buildscript {",
-                      """buildscript {
-              dependencies {
-                  classpath 'com.google.gms:google-services:4.4.2'
-              }"""
-                  )
-              else:
-                  text = """buildscript {
+              text = """buildscript {
+              repositories {
+                  google()
+                  mavenCentral()
+              }
               dependencies {
                   classpath 'com.google.gms:google-services:4.4.2'
               }
@@ -81,7 +76,7 @@ jobs:
 
           """ + text
 
-          root.write_text(text)
+          root_gradle.write_text(text)
           PY
 
       - name: Set Android minSdk
@@ -118,6 +113,11 @@ jobs:
           flutter pub get
           flutter build apk --release
 
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: NewasaFoodHub-APK
+          path: build/app/outputs/flutter-apk/app-release.apk
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
