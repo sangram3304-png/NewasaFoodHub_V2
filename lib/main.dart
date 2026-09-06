@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 
 import 'home_page.dart';
+import 'services/firestore_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,6 +28,8 @@ class NewasaFoodHub extends StatelessWidget {
     );
   }
 }
+
+// ================= MAIN SCREEN =================
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -206,12 +209,16 @@ class ProfilePage extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 25),
+
           Card(
             child: ListTile(
               leading: const Icon(Icons.login),
               title: const Text('Login / Register'),
               subtitle: const Text('Customer account'),
-              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+              trailing: const Icon(
+                Icons.arrow_forward_ios,
+                size: 16,
+              ),
               onTap: () {
                 Navigator.push(
                   context,
@@ -222,12 +229,16 @@ class ProfilePage extends StatelessWidget {
               },
             ),
           ),
+
           Card(
             child: ListTile(
               leading: const Icon(Icons.store),
               title: const Text('Hotel Partner'),
               subtitle: const Text('Manage your restaurant'),
-              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+              trailing: const Icon(
+                Icons.arrow_forward_ios,
+                size: 16,
+              ),
               onTap: () {
                 Navigator.push(
                   context,
@@ -238,20 +249,26 @@ class ProfilePage extends StatelessWidget {
               },
             ),
           ),
+
           Card(
             child: ListTile(
               leading: const Icon(Icons.location_on),
               title: const Text('Delivery Address'),
-              subtitle: const Text('Add your delivery address'),
+              subtitle: const Text(
+                'Add your delivery address',
+              ),
               onTap: () {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('Address feature coming soon.'),
+                    content: Text(
+                      'Address feature coming soon.',
+                    ),
                   ),
                 );
               },
             ),
           ),
+
           Card(
             child: ListTile(
               leading: const Icon(Icons.support_agent),
@@ -259,7 +276,9 @@ class ProfilePage extends StatelessWidget {
               onTap: () {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('Help & Support coming soon.'),
+                    content: Text(
+                      'Help & Support coming soon.',
+                    ),
                   ),
                 );
               },
@@ -281,7 +300,8 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final TextEditingController phoneController = TextEditingController();
+  final TextEditingController phoneController =
+      TextEditingController();
 
   @override
   void dispose() {
@@ -295,7 +315,9 @@ class _LoginPageState extends State<LoginPage> {
     if (phone.length != 10) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('कृपया 10 अंकी Mobile Number टाका.'),
+          content: Text(
+            'कृपया 10 अंकी Mobile Number टाका.',
+          ),
         ),
       );
       return;
@@ -327,6 +349,7 @@ class _LoginPageState extends State<LoginPage> {
               color: Colors.deepOrange,
             ),
             const SizedBox(height: 20),
+
             const Text(
               'Newasa Food Hub',
               style: TextStyle(
@@ -334,7 +357,9 @@ class _LoginPageState extends State<LoginPage> {
                 fontWeight: FontWeight.bold,
               ),
             ),
+
             const SizedBox(height: 30),
+
             TextField(
               controller: phoneController,
               keyboardType: TextInputType.phone,
@@ -345,7 +370,9 @@ class _LoginPageState extends State<LoginPage> {
                 border: OutlineInputBorder(),
               ),
             ),
+
             const SizedBox(height: 15),
+
             SizedBox(
               width: double.infinity,
               height: 50,
@@ -388,6 +415,7 @@ class PartnerDashboard extends StatelessWidget {
             'Register your hotel',
             const AddHotelPage(),
           ),
+
           _partnerTile(
             context,
             Icons.restaurant_menu,
@@ -395,6 +423,7 @@ class PartnerDashboard extends StatelessWidget {
             'Add food items',
             const AddMenuPage(),
           ),
+
           _partnerTile(
             context,
             Icons.menu_book,
@@ -402,6 +431,7 @@ class PartnerDashboard extends StatelessWidget {
             'Manage menu items',
             null,
           ),
+
           _partnerTile(
             context,
             Icons.shopping_bag,
@@ -409,6 +439,7 @@ class PartnerDashboard extends StatelessWidget {
             'View customer orders',
             null,
           ),
+
           _partnerTile(
             context,
             Icons.history,
@@ -438,20 +469,29 @@ class PartnerDashboard extends StatelessWidget {
         ),
         title: Text(
           title,
-          style: const TextStyle(fontWeight: FontWeight.bold),
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+          ),
         ),
         subtitle: Text(subtitle),
-        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+        trailing: const Icon(
+          Icons.arrow_forward_ios,
+          size: 16,
+        ),
         onTap: () {
           if (page != null) {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => page),
+              MaterialPageRoute(
+                builder: (_) => page,
+              ),
             );
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('$title feature coming soon.'),
+                content: Text(
+                  '$title feature coming soon.',
+                ),
               ),
             );
           }
@@ -475,6 +515,8 @@ class _AddHotelPageState extends State<AddHotelPage> {
   final location = TextEditingController();
   final phone = TextEditingController();
 
+  bool isSaving = false;
+
   @override
   void dispose() {
     hotelName.dispose();
@@ -488,19 +530,57 @@ class _AddHotelPageState extends State<AddHotelPage> {
         location.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Hotel name आणि location भरा.'),
+          content: Text(
+            'Hotel name आणि location भरा.',
+          ),
         ),
       );
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'Firebase save जोडण्यासाठी पुढील step आवश्यक आहे.',
+    setState(() {
+      isSaving = true;
+    });
+
+    try {
+      await FirestoreService().addRestaurant(
+        name: hotelName.text.trim(),
+        location: location.text.trim(),
+        phone: phone.text.trim(),
+      );
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Hotel Firebase मध्ये Save झाला. ✅',
+          ),
         ),
-      ),
-    );
+      );
+
+      hotelName.clear();
+      location.clear();
+      phone.clear();
+
+      Navigator.pop(context);
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Save failed: $e',
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          isSaving = false;
+        });
+      }
+    }
   }
 
   @override
@@ -519,7 +599,9 @@ class _AddHotelPageState extends State<AddHotelPage> {
               border: OutlineInputBorder(),
             ),
           ),
+
           const SizedBox(height: 15),
+
           TextField(
             controller: location,
             decoration: const InputDecoration(
@@ -527,7 +609,9 @@ class _AddHotelPageState extends State<AddHotelPage> {
               border: OutlineInputBorder(),
             ),
           ),
+
           const SizedBox(height: 15),
+
           TextField(
             controller: phone,
             keyboardType: TextInputType.phone,
@@ -536,15 +620,23 @@ class _AddHotelPageState extends State<AddHotelPage> {
               border: OutlineInputBorder(),
             ),
           ),
+
           const SizedBox(height: 20),
+
           SizedBox(
             height: 50,
             child: ElevatedButton(
-              onPressed: saveHotel,
-              child: const Text(
-                'Save Hotel',
-                style: TextStyle(fontSize: 16),
-              ),
+              onPressed: isSaving ? null : saveHotel,
+              child: isSaving
+                  ? const SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(),
+                    )
+                  : const Text(
+                      'Save Hotel',
+                      style: TextStyle(fontSize: 16),
+                    ),
             ),
           ),
         ],
@@ -591,7 +683,9 @@ class _AddMenuPageState extends State<AddMenuPage> {
         int.tryParse(price.text.trim()) == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Item name आणि योग्य price भरा.'),
+          content: Text(
+            'Item name आणि योग्य price भरा.',
+          ),
         ),
       );
       return;
@@ -625,7 +719,9 @@ class _AddMenuPageState extends State<AddMenuPage> {
               border: OutlineInputBorder(),
             ),
           ),
+
           const SizedBox(height: 15),
+
           TextField(
             controller: price,
             keyboardType: TextInputType.number,
@@ -635,7 +731,9 @@ class _AddMenuPageState extends State<AddMenuPage> {
               border: OutlineInputBorder(),
             ),
           ),
+
           const SizedBox(height: 15),
+
           DropdownButtonFormField<String>(
             value: category,
             decoration: const InputDecoration(
@@ -656,7 +754,9 @@ class _AddMenuPageState extends State<AddMenuPage> {
               }
             },
           ),
+
           const SizedBox(height: 20),
+
           SizedBox(
             height: 50,
             child: ElevatedButton(
