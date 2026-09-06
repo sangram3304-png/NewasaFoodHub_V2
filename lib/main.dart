@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'home_page.dart';
+import 'login_page.dart';
 import 'services/firestore_service.dart';
 
 Future<void> main() async {
@@ -198,7 +200,9 @@ class ProfilePage extends StatelessWidget {
               color: Colors.white,
             ),
           ),
+
           const SizedBox(height: 15),
+
           const Center(
             child: Text(
               'Newasa Food Hub',
@@ -208,6 +212,7 @@ class ProfilePage extends StatelessWidget {
               ),
             ),
           ),
+
           const SizedBox(height: 25),
 
           Card(
@@ -261,7 +266,7 @@ class ProfilePage extends StatelessWidget {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text(
-                      'Address feature coming soon.',
+                      'Address feature पुढील step मध्ये जोडू.',
                     ),
                   ),
                 );
@@ -277,7 +282,7 @@ class ProfilePage extends StatelessWidget {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text(
-                      'Help & Support coming soon.',
+                      'Help & Support पुढील step मध्ये जोडू.',
                     ),
                   ),
                 );
@@ -285,107 +290,6 @@ class ProfilePage extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-// ================= LOGIN =================
-
-class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
-
-  @override
-  State<LoginPage> createState() => _LoginPageState();
-}
-
-class _LoginPageState extends State<LoginPage> {
-  final TextEditingController phoneController =
-      TextEditingController();
-
-  @override
-  void dispose() {
-    phoneController.dispose();
-    super.dispose();
-  }
-
-  void continueLogin() {
-    final phone = phoneController.text.trim();
-
-    if (phone.length != 10) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'कृपया 10 अंकी Mobile Number टाका.',
-          ),
-        ),
-      );
-      return;
-    }
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'OTP login Firebase Authentication मध्ये पुढील step मध्ये जोडू.',
-        ),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Login / Register'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              Icons.restaurant,
-              size: 80,
-              color: Colors.deepOrange,
-            ),
-            const SizedBox(height: 20),
-
-            const Text(
-              'Newasa Food Hub',
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-
-            const SizedBox(height: 30),
-
-            TextField(
-              controller: phoneController,
-              keyboardType: TextInputType.phone,
-              maxLength: 10,
-              decoration: const InputDecoration(
-                labelText: 'Mobile Number',
-                prefixIcon: Icon(Icons.phone),
-                border: OutlineInputBorder(),
-              ),
-            ),
-
-            const SizedBox(height: 15),
-
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                onPressed: continueLogin,
-                child: const Text(
-                  'Continue with OTP',
-                  style: TextStyle(fontSize: 16),
-                ),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -490,7 +394,7 @@ class PartnerDashboard extends StatelessWidget {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(
-                  '$title feature coming soon.',
+                  '$title feature पुढील step मध्ये जोडू.',
                 ),
               ),
             );
@@ -655,10 +559,15 @@ class AddMenuPage extends StatefulWidget {
 }
 
 class _AddMenuPageState extends State<AddMenuPage> {
+  final FirestoreService _service = FirestoreService();
+
   final itemName = TextEditingController();
   final price = TextEditingController();
 
   String category = 'Veg';
+  String? selectedRestaurantId;
+
+  bool isSaving = false;
 
   final categories = const [
     'Veg',
@@ -678,9 +587,24 @@ class _AddMenuPageState extends State<AddMenuPage> {
     super.dispose();
   }
 
-  void addMenuItem() {
-    if (itemName.text.trim().isEmpty ||
-        int.tryParse(price.text.trim()) == null) {
+  Future<void> addMenuItem() async {
+    final name = itemName.text.trim();
+    final itemPrice = int.tryParse(price.text.trim());
+
+    if (selectedRestaurantId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'कृपया Hotel निवडा.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (name.isEmpty ||
+        itemPrice == null ||
+        itemPrice <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
@@ -691,16 +615,51 @@ class _AddMenuPageState extends State<AddMenuPage> {
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          '${itemName.text.trim()} menu मध्ये जोडले.',
-        ),
-      ),
-    );
+    setState(() {
+      isSaving = true;
+    });
 
-    itemName.clear();
-    price.clear();
+    try {
+      await _service.addMenuItem(
+        restaurantId: selectedRestaurantId!,
+        name: name,
+        price: itemPrice,
+        category: category,
+      );
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Menu Firebase मध्ये Save झाला. ✅',
+          ),
+        ),
+      );
+
+      itemName.clear();
+      price.clear();
+
+      setState(() {
+        category = 'Veg';
+      });
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Menu Save failed: $e',
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          isSaving = false;
+        });
+      }
+    }
   }
 
   @override
@@ -709,66 +668,143 @@ class _AddMenuPageState extends State<AddMenuPage> {
       appBar: AppBar(
         title: const Text('Add Menu Item'),
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(20),
-        children: [
-          TextField(
-            controller: itemName,
-            decoration: const InputDecoration(
-              labelText: 'Food Item Name',
-              border: OutlineInputBorder(),
-            ),
-          ),
+      body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+        stream: _service.restaurantsStream(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState ==
+              ConnectionState.waiting) {
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          }
 
-          const SizedBox(height: 15),
-
-          TextField(
-            controller: price,
-            keyboardType: TextInputType.number,
-            decoration: const InputDecoration(
-              labelText: 'Price',
-              prefixText: '₹ ',
-              border: OutlineInputBorder(),
-            ),
-          ),
-
-          const SizedBox(height: 15),
-
-          DropdownButtonFormField<String>(
-            value: category,
-            decoration: const InputDecoration(
-              labelText: 'Category',
-              border: OutlineInputBorder(),
-            ),
-            items: categories.map((item) {
-              return DropdownMenuItem(
-                value: item,
-                child: Text(item),
-              );
-            }).toList(),
-            onChanged: (value) {
-              if (value != null) {
-                setState(() {
-                  category = value;
-                });
-              }
-            },
-          ),
-
-          const SizedBox(height: 20),
-
-          SizedBox(
-            height: 50,
-            child: ElevatedButton(
-              onPressed: addMenuItem,
-              child: const Text(
-                'Add Menu Item',
-                style: TextStyle(fontSize: 16),
+          if (snapshot.hasError) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Text(
+                  'Hotels load करताना error आला.\n${snapshot.error}',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Colors.red,
+                  ),
+                ),
               ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
+            );
+          }
+
+          final hotels = snapshot.data?.docs ?? [];
+
+          if (hotels.isEmpty) {
+            return const Center(
+              child: Padding(
+                padding: EdgeInsets.all(20),
+                child: Text(
+                  'पहिले एक Hotel Add करा.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 18),
+                ),
+              ),
+            );
+          }
+
+          if (selectedRestaurantId == null ||
+              !hotels.any(
+                (hotel) =>
+                    hotel.id == selectedRestaurantId,
+              )) {
+            selectedRestaurantId = hotels.first.id;
+          }
+
+          return ListView(
+            padding: const EdgeInsets.all(20),
+            children: [
+              const Text(
+                'Hotel निवडा',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+
+              const SizedBox(height: 10),
+
+              DropdownButtonFormField<String>(
+                value: selectedRestaurantId,
+                decoration: const InputDecoration(
+                  labelText: 'Select Hotel',
+                  border: OutlineInputBorder(),
+                ),
+                items: hotels.map((hotel) {
+                  final data = hotel.data();
+
+                  return DropdownMenuItem<String>(
+                    value: hotel.id,
+                    child: Text(
+                      (data['name'] ?? 'Hotel').toString(),
+                    ),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    selectedRestaurantId = value;
+                  });
+                },
+              ),
+
+              const SizedBox(height: 20),
+
+              TextField(
+                controller: itemName,
+                decoration: const InputDecoration(
+                  labelText: 'Food Item Name',
+                  hintText: 'उदा. Chicken Biryani',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+
+              const SizedBox(height: 15),
+
+              TextField(
+                controller: price,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Price',
+                  prefixText: '₹ ',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+
+              const SizedBox(height: 15),
+
+              DropdownButtonFormField<String>(
+                value: category,
+                decoration: const InputDecoration(
+                  labelText: 'Category',
+                  border: OutlineInputBorder(),
+                ),
+                items: categories.map((item) {
+                  return DropdownMenuItem<String>(
+                    value: item,
+                    child: Text(item),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  if (value != null) {
+                    setState(() {
+                      category = value;
+                    });
+                  }
+                },
+              ),
+
+              const SizedBox(height: 25),
+
+              SizedBox(
+                height: 52,
+                child: ElevatedButton(
+                  onPressed:
+                      isSaving ? null : addMenuItem,
+                  child: isSaving
+                      ? const SizedBox(
+      
