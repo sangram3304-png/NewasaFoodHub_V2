@@ -603,4 +603,33 @@ class HotelMenuPage extends StatelessWidget {
                       color: Colors.orange.shade100,
                       borderRadius:
                           BorderRadius.circular(14),
-            
+                                child: const Center(
+                      child: Text(
+                        '🍛',
+                        style: TextStyle(fontSize: 27),
+                      ),
+                    ),
+                  ),
+                  title: Text(
+                    itemName,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  subtitle: Text(category),
+                  trailing: Text(
+                    '₹$price',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+            }
