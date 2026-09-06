@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
-import 'home_page.dart';
-import 'services/firestore_service.dart';
+import 'package:firebase_core/firebase_core.dart';
 
-void main() {
+import 'home_page.dart';
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await Firebase.initializeApp();
+
   runApp(const NewasaFoodHub());
 }
 
@@ -31,7 +36,7 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-  int currentIndex = 0;
+  int selectedIndex = 0;
 
   final List<Widget> pages = const [
     HomePage(),
@@ -43,12 +48,12 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: pages[currentIndex],
+      body: pages[selectedIndex],
       bottomNavigationBar: NavigationBar(
-        selectedIndex: currentIndex,
+        selectedIndex: selectedIndex,
         onDestinationSelected: (index) {
           setState(() {
-            currentIndex = index;
+            selectedIndex = index;
           });
         },
         destinations: const [
@@ -78,6 +83,8 @@ class _MainScreenState extends State<MainScreen> {
   }
 }
 
+// ================= ORDERS =================
+
 class OrdersPage extends StatelessWidget {
   const OrdersPage({super.key});
 
@@ -95,8 +102,8 @@ class OrdersPage extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              Icons.receipt_long_outlined,
-              size: 80,
+              Icons.receipt_long,
+              size: 70,
               color: Colors.deepOrange,
             ),
             SizedBox(height: 15),
@@ -108,13 +115,18 @@ class OrdersPage extends StatelessWidget {
               ),
             ),
             SizedBox(height: 8),
-            Text('Your orders will appear here.'),
+            Text(
+              'Your orders will appear here.',
+              style: TextStyle(color: Colors.grey),
+            ),
           ],
         ),
       ),
     );
   }
 }
+
+// ================= CART =================
 
 class CartPage extends StatelessWidget {
   const CartPage({super.key});
@@ -124,7 +136,7 @@ class CartPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'My Cart',
+          'Cart',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
       ),
@@ -134,7 +146,7 @@ class CartPage extends StatelessWidget {
           children: [
             Icon(
               Icons.shopping_cart_outlined,
-              size: 80,
+              size: 70,
               color: Colors.deepOrange,
             ),
             SizedBox(height: 15),
@@ -146,13 +158,18 @@ class CartPage extends StatelessWidget {
               ),
             ),
             SizedBox(height: 8),
-            Text('Add delicious food to your cart.'),
+            Text(
+              'Add delicious food to your cart.',
+              style: TextStyle(color: Colors.grey),
+            ),
           ],
         ),
       ),
     );
   }
 }
+
+// ================= PROFILE =================
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -169,149 +186,92 @@ class ProfilePage extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(18),
         children: [
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [
-                  Colors.deepOrange,
-                  Colors.orange,
-                ],
-              ),
-              borderRadius: BorderRadius.circular(22),
+          const CircleAvatar(
+            radius: 45,
+            backgroundColor: Colors.deepOrange,
+            child: Icon(
+              Icons.person,
+              size: 50,
+              color: Colors.white,
             ),
-            child: const Row(
-              children: [
-                CircleAvatar(
-                  radius: 32,
-                  backgroundColor: Colors.white,
-                  child: Icon(
-                    Icons.person,
-                    size: 38,
-                    color: Colors.deepOrange,
-                  ),
-                ),
-                SizedBox(width: 15),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Welcome!',
-                      style: TextStyle(
-                        color: Colors.white70,
-                      ),
-                    ),
-                    Text(
-                      'Login / Register',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+          ),
+          const SizedBox(height: 15),
+          const Center(
+            child: Text(
+              'Newasa Food Hub',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
           const SizedBox(height: 25),
-
-          _profileButton(
-            context,
-            Icons.login,
-            'Login / Register',
-            'Customer account',
-            () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const LoginPage(),
-                ),
-              );
-            },
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.login),
+              title: const Text('Login / Register'),
+              subtitle: const Text('Customer account'),
+              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const LoginPage(),
+                  ),
+                );
+              },
+            ),
           ),
-
-          _profileButton(
-            context,
-            Icons.storefront,
-            'Hotel Partner',
-            'Register and manage your hotel',
-            () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const PartnerDashboard(),
-                ),
-              );
-            },
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.store),
+              title: const Text('Hotel Partner'),
+              subtitle: const Text('Manage your restaurant'),
+              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const PartnerDashboard(),
+                  ),
+                );
+              },
+            ),
           ),
-
-          _profileButton(
-            context,
-            Icons.location_on_outlined,
-            'Delivery Address',
-            'Manage your delivery address',
-            () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Address feature coming soon.'),
-                ),
-              );
-            },
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.location_on),
+              title: const Text('Delivery Address'),
+              subtitle: const Text('Add your delivery address'),
+              onTap: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Address feature coming soon.'),
+                  ),
+                );
+              },
+            ),
           ),
-
-          _profileButton(
-            context,
-            Icons.help_outline,
-            'Help & Support',
-            'Get help with your orders',
-            () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Help & Support coming soon.'),
-                ),
-              );
-            },
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.support_agent),
+              title: const Text('Help & Support'),
+              onTap: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Help & Support coming soon.'),
+                  ),
+                );
+              },
+            ),
           ),
         ],
       ),
     );
   }
-
-  Widget _profileButton(
-    BuildContext context,
-    IconData icon,
-    String title,
-    String subtitle,
-    VoidCallback onTap,
-  ) {
-    return Card(
-      elevation: 0,
-      margin: const EdgeInsets.only(bottom: 12),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: Colors.deepOrange.shade50,
-          child: Icon(
-            icon,
-            color: Colors.deepOrange,
-          ),
-        ),
-        title: Text(
-          title,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        subtitle: Text(subtitle),
-        trailing: const Icon(
-          Icons.arrow_forward_ios,
-          size: 16,
-        ),
-        onTap: onTap,
-      ),
-    );
-  }
 }
+
+// ================= LOGIN =================
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -321,21 +281,21 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final mobileController = TextEditingController();
+  final TextEditingController phoneController = TextEditingController();
 
   @override
   void dispose() {
-    mobileController.dispose();
+    phoneController.dispose();
     super.dispose();
   }
 
   void continueLogin() {
-    final mobile = mobileController.text.trim();
+    final phone = phoneController.text.trim();
 
-    if (mobile.length < 10) {
+    if (phone.length != 10) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please enter a valid mobile number.'),
+          content: Text('कृपया 10 अंकी Mobile Number टाका.'),
         ),
       );
       return;
@@ -344,7 +304,7 @@ class _LoginPageState extends State<LoginPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text(
-          'OTP login will be connected with Firebase next.',
+          'OTP login Firebase Authentication मध्ये पुढील step मध्ये जोडू.',
         ),
       ),
     );
@@ -359,26 +319,26 @@ class _LoginPageState extends State<LoginPage> {
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const SizedBox(height: 30),
             const Icon(
               Icons.restaurant,
-              size: 70,
+              size: 80,
               color: Colors.deepOrange,
             ),
             const SizedBox(height: 20),
             const Text(
-              'Welcome to Newasa Food Hub',
-              textAlign: TextAlign.center,
+              'Newasa Food Hub',
               style: TextStyle(
-                fontSize: 24,
+                fontSize: 28,
                 fontWeight: FontWeight.bold,
               ),
             ),
             const SizedBox(height: 30),
             TextField(
-              controller: mobileController,
+              controller: phoneController,
               keyboardType: TextInputType.phone,
+              maxLength: 10,
               decoration: const InputDecoration(
                 labelText: 'Mobile Number',
                 prefixIcon: Icon(Icons.phone),
@@ -388,12 +348,12 @@ class _LoginPageState extends State<LoginPage> {
             const SizedBox(height: 15),
             SizedBox(
               width: double.infinity,
-              height: 52,
+              height: 50,
               child: ElevatedButton(
                 onPressed: continueLogin,
                 child: const Text(
-                  'Continue',
-                  style: TextStyle(fontSize: 17),
+                  'Continue with OTP',
+                  style: TextStyle(fontSize: 16),
                 ),
               ),
             ),
@@ -403,6 +363,8 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 }
+
+// ================= PARTNER DASHBOARD =================
 
 class PartnerDashboard extends StatelessWidget {
   const PartnerDashboard({super.key});
@@ -419,126 +381,40 @@ class PartnerDashboard extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(18),
         children: [
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [
-                  Colors.deepOrange,
-                  Colors.orange,
-                ],
-              ),
-              borderRadius: BorderRadius.circular(22),
-            ),
-            child: const Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(
-                  Icons.storefront,
-                  color: Colors.white,
-                  size: 42,
-                ),
-                SizedBox(height: 10),
-                Text(
-                  'Partner Dashboard',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 23,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                SizedBox(height: 5),
-                Text(
-                  'Manage your hotel, menu and orders',
-                  style: TextStyle(
-                    color: Colors.white70,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
-
           _partnerTile(
             context,
             Icons.add_business,
             'Add Hotel',
-            'Register your hotel on Newasa Food Hub',
-            () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const AddHotelPage(),
-                ),
-              );
-            },
+            'Register your hotel',
+            const AddHotelPage(),
           ),
-
           _partnerTile(
             context,
             Icons.restaurant_menu,
             'Add Menu',
-            'Add food items, prices and categories',
-            () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const AddMenuPage(),
-                ),
-              );
-            },
+            'Add food items',
+            const AddMenuPage(),
           ),
-
           _partnerTile(
             context,
             Icons.menu_book,
             'My Menu',
-            'View and manage your menu',
-            () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('My Menu coming soon.'),
-                ),
-              );
-            },
+            'Manage menu items',
+            null,
           ),
-
           _partnerTile(
             context,
-            Icons.receipt_long,
+            Icons.shopping_bag,
             'New Orders',
-            'Manage customer orders',
-            () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Orders system coming soon.'),
-                ),
-              );
-            },
+            'View customer orders',
+            null,
           ),
-
           _partnerTile(
             context,
             Icons.history,
             'Order History',
-            'View completed orders',
-            () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Order history coming soon.'),
-                ),
-              );
-            },
-          ),
-
-          const SizedBox(height: 10),
-
-          OutlinedButton.icon(
-            onPressed: () {
-              Navigator.pop(context);
-            },
-            icon: const Icon(Icons.logout),
-            label: const Text('Logout'),
+            'Previous orders',
+            null,
           ),
         ],
       ),
@@ -550,39 +426,42 @@ class PartnerDashboard extends StatelessWidget {
     IconData icon,
     String title,
     String subtitle,
-    VoidCallback onTap,
+    Widget? page,
   ) {
     return Card(
-      elevation: 0,
       margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
-        contentPadding: const EdgeInsets.all(10),
-        leading: CircleAvatar(
-          radius: 27,
-          backgroundColor: Colors.deepOrange.shade50,
-          child: Icon(
-            icon,
-            color: Colors.deepOrange,
-            size: 27,
-          ),
+        leading: Icon(
+          icon,
+          color: Colors.deepOrange,
+          size: 30,
         ),
         title: Text(
           title,
-          style: const TextStyle(
-            fontSize: 17,
-            fontWeight: FontWeight.bold,
-          ),
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         subtitle: Text(subtitle),
-        trailing: const Icon(
-          Icons.arrow_forward_ios,
-          size: 17,
-        ),
-        onTap: onTap,
+        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+        onTap: () {
+          if (page != null) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => page),
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('$title feature coming soon.'),
+              ),
+            );
+          }
+        },
       ),
     );
   }
 }
+
+// ================= ADD HOTEL =================
 
 class AddHotelPage extends StatefulWidget {
   const AddHotelPage({super.key});
@@ -595,8 +474,6 @@ class _AddHotelPageState extends State<AddHotelPage> {
   final hotelName = TextEditingController();
   final location = TextEditingController();
   final phone = TextEditingController();
-
-  bool saving = false;
 
   @override
   void dispose() {
@@ -611,66 +488,17 @@ class _AddHotelPageState extends State<AddHotelPage> {
         location.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text(
-            'Please enter hotel name and location.',
-          ),
+          content: Text('Hotel name आणि location भरा.'),
         ),
       );
       return;
     }
 
-    setState(() {
-      saving = true;
-    });
-
-    try {
-      await FirestoreService().addRestaurant(
-        name: hotelName.text.trim(),
-        location: location.text.trim(),
-        phone: phone.text.trim(),
-      );
-
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Hotel saved successfully in Firebase.'),
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Firebase save जोडण्यासाठी पुढील step आवश्यक आहे.',
         ),
-      );
-
-      hotelName.clear();
-      location.clear();
-      phone.clear();
-    } catch (e) {
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error saving hotel: $e'),
-        ),
-      );
-    } finally {
-      if (mounted) {
-        setState(() {
-          saving = false;
-        });
-      }
-    }
-  }
-
-  Widget field(
-    TextEditingController controller,
-    String label,
-    IconData icon, {
-    TextInputType? keyboard,
-  }) {
-    return TextField(
-      controller: controller,
-      keyboardType: keyboard,
-      decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: Icon(icon),
-        border: const OutlineInputBorder(),
       ),
     );
   }
@@ -684,56 +512,38 @@ class _AddHotelPageState extends State<AddHotelPage> {
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          const Text(
-            'Hotel Information',
-            style: TextStyle(
-              fontSize: 23,
-              fontWeight: FontWeight.bold,
+          TextField(
+            controller: hotelName,
+            decoration: const InputDecoration(
+              labelText: 'Hotel Name',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 15),
+          TextField(
+            controller: location,
+            decoration: const InputDecoration(
+              labelText: 'Location',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 15),
+          TextField(
+            controller: phone,
+            keyboardType: TextInputType.phone,
+            decoration: const InputDecoration(
+              labelText: 'Phone Number',
+              border: OutlineInputBorder(),
             ),
           ),
           const SizedBox(height: 20),
-
-          field(
-            hotelName,
-            'Hotel Name',
-            Icons.storefront,
-          ),
-
-          const SizedBox(height: 14),
-
-          field(
-            location,
-            'Hotel Location',
-            Icons.location_on,
-          ),
-
-          const SizedBox(height: 14),
-
-          field(
-            phone,
-            'Contact Number',
-            Icons.phone,
-            keyboard: TextInputType.phone,
-          ),
-
-          const SizedBox(height: 25),
-
           SizedBox(
-            height: 52,
-            child: ElevatedButton.icon(
-              onPressed: saving ? null : saveHotel,
-              icon: saving
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                      ),
-                    )
-                  : const Icon(Icons.save),
-              label: Text(
-                saving ? 'Saving...' : 'Save Hotel',
-                style: const TextStyle(fontSize: 17),
+            height: 50,
+            child: ElevatedButton(
+              onPressed: saveHotel,
+              child: const Text(
+                'Save Hotel',
+                style: TextStyle(fontSize: 16),
               ),
             ),
           ),
@@ -742,6 +552,8 @@ class _AddHotelPageState extends State<AddHotelPage> {
     );
   }
 }
+
+// ================= ADD MENU =================
 
 class AddMenuPage extends StatefulWidget {
   const AddMenuPage({super.key});
@@ -753,11 +565,10 @@ class AddMenuPage extends StatefulWidget {
 class _AddMenuPageState extends State<AddMenuPage> {
   final itemName = TextEditingController();
   final price = TextEditingController();
-  final description = TextEditingController();
 
   String category = 'Veg';
 
-  final List<String> categories = [
+  final categories = const [
     'Veg',
     'Non-Veg',
     'Biryani',
@@ -772,18 +583,15 @@ class _AddMenuPageState extends State<AddMenuPage> {
   void dispose() {
     itemName.dispose();
     price.dispose();
-    description.dispose();
     super.dispose();
   }
 
   void addMenuItem() {
     if (itemName.text.trim().isEmpty ||
-        price.text.trim().isEmpty) {
+        int.tryParse(price.text.trim()) == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text(
-            'Please enter food name and price.',
-          ),
+          content: Text('Item name आणि योग्य price भरा.'),
         ),
       );
       return;
@@ -792,18 +600,13 @@ class _AddMenuPageState extends State<AddMenuPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          '${itemName.text.trim()} added to menu.',
+          '${itemName.text.trim()} menu मध्ये जोडले.',
         ),
       ),
     );
 
     itemName.clear();
     price.clear();
-    description.clear();
-
-    setState(() {
-      category = 'Veg';
-    });
   }
 
   @override
@@ -815,65 +618,32 @@ class _AddMenuPageState extends State<AddMenuPage> {
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          Container(
-            height: 130,
-            decoration: BoxDecoration(
-              color: Colors.deepOrange.shade50,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: const Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.add_a_photo,
-                  size: 42,
-                  color: Colors.deepOrange,
-                ),
-                SizedBox(height: 8),
-                Text(
-                  'Add Food Photo',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 22),
-
           TextField(
             controller: itemName,
             decoration: const InputDecoration(
               labelText: 'Food Item Name',
-              prefixIcon: Icon(Icons.restaurant),
               border: OutlineInputBorder(),
             ),
           ),
-
-          const SizedBox(height: 14),
-
+          const SizedBox(height: 15),
           TextField(
             controller: price,
             keyboardType: TextInputType.number,
             decoration: const InputDecoration(
               labelText: 'Price',
-              prefixIcon: Icon(Icons.currency_rupee),
+              prefixText: '₹ ',
               border: OutlineInputBorder(),
             ),
           ),
-
-          const SizedBox(height: 14),
-
+          const SizedBox(height: 15),
           DropdownButtonFormField<String>(
             value: category,
             decoration: const InputDecoration(
               labelText: 'Category',
-              prefixIcon: Icon(Icons.category),
               border: OutlineInputBorder(),
             ),
             items: categories.map((item) {
-              return DropdownMenuItem<String>(
+              return DropdownMenuItem(
                 value: item,
                 child: Text(item),
               );
@@ -886,30 +656,14 @@ class _AddMenuPageState extends State<AddMenuPage> {
               }
             },
           ),
-
-          const SizedBox(height: 14),
-
-          TextField(
-            controller: description,
-            maxLines: 3,
-            decoration: const InputDecoration(
-              labelText: 'Description',
-              prefixIcon: Icon(Icons.description),
-              border: OutlineInputBorder(),
-              alignLabelWithHint: true,
-            ),
-          ),
-
-          const SizedBox(height: 25),
-
+          const SizedBox(height: 20),
           SizedBox(
-            height: 52,
-            child: ElevatedButton.icon(
+            height: 50,
+            child: ElevatedButton(
               onPressed: addMenuItem,
-              icon: const Icon(Icons.add),
-              label: const Text(
+              child: const Text(
                 'Add Menu Item',
-                style: TextStyle(fontSize: 17),
+                style: TextStyle(fontSize: 16),
               ),
             ),
           ),
