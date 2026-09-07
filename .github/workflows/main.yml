@@ -27,16 +27,15 @@ jobs:
 
       - name: Set Firebase package name
         run: |
-          sed -i 's/com.newasafoodhub.newasa_food_hub/com.newasafoodhub.app/g' android/app/build.gradle.kts
-          sed -i 's/com.example.newasafoodhub_v2/com.newasafoodhub.app/g' android/app/build.gradle.kts
-          sed -i 's/com.newasafoodhub.newasa_food_hub/com.newasafoodhub.app/g' android/app/src/main/AndroidManifest.xml
+          sed -i 's/applicationId "com.newasafoodhub.newasa_food_hub"/applicationId "com.newasafoodhub.app"/g' android/app/build.gradle
+          sed -i 's/applicationId "com.example.newasafoodhub_v2"/applicationId "com.newasafoodhub.app"/g' android/app/build.gradle
 
       - name: Verify configuration
         run: |
           echo "=== Firebase package ==="
           grep -n "package_name" android/app/google-services.json
           echo "=== Application ID ==="
-          grep -n "applicationId" android/app/build.gradle.kts
+          grep -n "applicationId" android/app/build.gradle
 
       - name: Get dependencies
         run: flutter pub get
