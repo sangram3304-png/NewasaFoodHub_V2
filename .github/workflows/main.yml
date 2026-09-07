@@ -27,24 +27,31 @@ jobs:
 
       - name: Set Firebase package name
         run: |
-          sed -i 's/applicationId "com.newasafoodhub.newasa_food_hub"/applicationId "com.newasafoodhub.app"/g' android/app/build.gradle
+          sed -i 's/applicationId = "com.example.newasafoodhub_v2"/applicationId = "com.newasafoodhub.app"/g' android/app/build.gradle
           sed -i 's/applicationId "com.example.newasafoodhub_v2"/applicationId "com.newasafoodhub.app"/g' android/app/build.gradle
+          sed -i 's/applicationId = "com.newasafoodhub.newasa_food_hub"/applicationId = "com.newasafoodhub.app"/g' android/app/build.gradle
+          sed -i 's/applicationId "com.newasafoodhub.newasa_food_hub"/applicationId "com.newasafoodhub.app"/g' android/app/build.gradle
 
-      - name: Set Android minimum SDK
+      - name: Set minimum SDK to 23
         run: |
+          sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 23/g' android/app/build.gradle
           sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 23/g' android/app/build.gradle
           sed -i 's/minSdkVersion 21/minSdkVersion 23/g' android/app/build.gradle
+          sed -i 's/minSdkVersion = 21/minSdkVersion = 23/g' android/app/build.gradle
 
-      - name: Verify Android configuration
+      - name: Verify configuration
         run: |
-          echo "=== Firebase package ==="
+          echo "========== BUILD.GRADLE =========="
+          cat android/app/build.gradle
+
+          echo "========== FIREBASE PACKAGE =========="
           grep -n "package_name" android/app/google-services.json
 
-          echo "=== Application ID ==="
+          echo "========== APPLICATION ID =========="
           grep -n "applicationId" android/app/build.gradle
 
-          echo "=== Minimum SDK ==="
-          grep -n "minSdkVersion" android/app/build.gradle
+          echo "========== MIN SDK =========="
+          grep -n "minSdk" android/app/build.gradle || true
 
       - name: Get dependencies
         run: flutter pub get
