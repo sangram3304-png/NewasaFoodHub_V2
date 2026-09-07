@@ -23,7 +23,7 @@ jobs:
 
       - name: Generate Android project
         run: |
-          flutter create --platforms=android --org com.newasafoodhub .
+          flutter create --platforms=android --org com.newasafoodhub --project-name newasafoodhub_v2 .
 
       - name: Set Firebase package name
         run: |
@@ -31,11 +31,11 @@ jobs:
           sed -i 's/com.example.newasafoodhub_v2/com.newasafoodhub.app/g' android/app/build.gradle.kts
           sed -i 's/com.newasafoodhub.newasa_food_hub/com.newasafoodhub.app/g' android/app/src/main/AndroidManifest.xml
 
-      - name: Verify Firebase configuration
+      - name: Verify configuration
         run: |
           echo "=== Firebase package ==="
           grep -n "package_name" android/app/google-services.json
-          echo "=== Android application ID ==="
+          echo "=== Application ID ==="
           grep -n "applicationId" android/app/build.gradle.kts
 
       - name: Get dependencies
