@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'services/firestore_service.dart';
+import 'models/food_model.dart';
+import 'screens/food/food_details_screen.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -169,10 +171,12 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
           const SizedBox(height: 12),
+
           StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
             stream: _firestoreService.restaurantsStream(),
             builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
+              if (snapshot.connectionState ==
+                  ConnectionState.waiting) {
                 return const Center(
                   child: Padding(
                     padding: EdgeInsets.all(30),
@@ -247,7 +251,7 @@ class _HomePageState extends State<HomePage> {
                   final hotel = hotels[index];
                   final data = hotel.data();
 
-                  final itemName =
+                  final hotelName =
                       (data['name'] ?? 'Hotel').toString();
 
                   final location =
@@ -267,12 +271,14 @@ class _HomePageState extends State<HomePage> {
                     ),
                     child: ListTile(
                       contentPadding: const EdgeInsets.all(12),
+
                       leading: Container(
                         width: 55,
                         height: 55,
                         decoration: BoxDecoration(
                           color: Colors.orange.shade100,
-                          borderRadius: BorderRadius.circular(14),
+                          borderRadius:
+                              BorderRadius.circular(14),
                         ),
                         child: const Center(
                           child: Text(
@@ -281,13 +287,15 @@ class _HomePageState extends State<HomePage> {
                           ),
                         ),
                       ),
+
                       title: Text(
-                        itemName,
+                        hotelName,
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 17,
                         ),
                       ),
+
                       subtitle: Padding(
                         padding: const EdgeInsets.only(top: 5),
                         child: Column(
@@ -312,18 +320,20 @@ class _HomePageState extends State<HomePage> {
                           ],
                         ),
                       ),
+
                       trailing: const Icon(
                         Icons.arrow_forward_ios,
                         size: 18,
                         color: Colors.orange,
                       ),
+
                       onTap: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (_) => HotelMenuPage(
                               restaurantId: hotel.id,
-                              restaurantName: itemName,
+                              restaurantName: hotelName,
                             ),
                           ),
                         );
@@ -360,8 +370,10 @@ class HotelMenuPage extends StatelessWidget {
         backgroundColor: Colors.orange,
         foregroundColor: Colors.white,
       ),
+
       body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
         stream: service.menuStream(restaurantId),
+
         builder: (context, snapshot) {
           if (snapshot.connectionState ==
               ConnectionState.waiting) {
@@ -399,50 +411,108 @@ class HotelMenuPage extends StatelessWidget {
           return ListView.builder(
             padding: const EdgeInsets.all(16),
             itemCount: menuItems.length,
+
             itemBuilder: (context, index) {
-              final item = menuItems[index].data();
+              final document = menuItems[index];
+              final item = document.data();
 
               final name =
                   (item['name'] ?? 'Food Item').toString();
 
               final category =
-                  (item['category'] ?? '').toString();
+                  (item['category'] ?? 'Food').toString();
 
-              final price =
-                  (item['price'] ?? 0).toString();
+              final priceValue = item['price'] ?? 0;
+
+              final int price = priceValue is int
+                  ? priceValue
+                  : int.tryParse(
+                        priceValue.toString(),
+                      ) ??
+                      0;
 
               return Card(
                 margin: const EdgeInsets.only(bottom: 12),
+                elevation: 2,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15),
+                ),
+
                 child: ListTile(
                   contentPadding: const EdgeInsets.all(12),
+
                   leading: Container(
-                    width: 55,
-                    height: 55,
+                    width: 60,
+                    height: 60,
                     decoration: BoxDecoration(
                       color: Colors.orange.shade100,
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius:
+                          BorderRadius.circular(12),
                     ),
                     child: const Center(
                       child: Text(
                         '🍽️',
-                        style: TextStyle(fontSize: 26),
+                        style: TextStyle(fontSize: 30),
                       ),
                     ),
                   ),
+
                   title: Text(
                     name,
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
+                      fontSize: 17,
                     ),
                   ),
-                  subtitle: Text(category),
-                  trailing: Text(
-                    '₹$price',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
+
+                  subtitle: Padding(
+                    padding: const EdgeInsets.only(top: 5),
+                    child: Text(category),
                   ),
+
+                  trailing: Column(
+                    mainAxisAlignment:
+                        MainAxisAlignment.center,
+                    crossAxisAlignment:
+                        CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        '₹$price',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 17,
+                          color: Colors.orange,
+                        ),
+                      ),
+                      const SizedBox(height: 5),
+                      const Icon(
+                        Icons.arrow_forward_ios,
+                        size: 15,
+                        color: Colors.orange,
+                      ),
+                    ],
+                  ),
+
+                  onTap: () {
+                    final food = FoodModel(
+                      id: document.id,
+                      restaurantId: restaurantId,
+                      name: name,
+                      price: price,
+                      category: category,
+                      isAvailable: true,
+                    );
+
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => FoodDetailsScreen(
+                          food: food,
+                          restaurantName: restaurantName,
+                        ),
+                      ),
+                    );
+                  },
                 ),
               );
             },
