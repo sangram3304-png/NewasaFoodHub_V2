@@ -9,17 +9,48 @@ import 'login_page.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  FirebaseInitializationResult firebaseResult;
+
   try {
     await Firebase.initializeApp();
+
+    firebaseResult = const FirebaseInitializationResult(
+      success: true,
+      error: null,
+    );
   } catch (e) {
     debugPrint('Firebase initialization error: $e');
+
+    firebaseResult = FirebaseInitializationResult(
+      success: false,
+      error: e.toString(),
+    );
   }
 
-  runApp(const NewasaFoodHubApp());
+  runApp(
+    NewasaFoodHubApp(
+      firebaseResult: firebaseResult,
+    ),
+  );
+}
+
+class FirebaseInitializationResult {
+  final bool success;
+  final String? error;
+
+  const FirebaseInitializationResult({
+    required this.success,
+    required this.error,
+  });
 }
 
 class NewasaFoodHubApp extends StatelessWidget {
-  const NewasaFoodHubApp({super.key});
+  final FirebaseInitializationResult firebaseResult;
+
+  const NewasaFoodHubApp({
+    super.key,
+    required this.firebaseResult,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -27,13 +58,88 @@ class NewasaFoodHubApp extends StatelessWidget {
       title: 'Newasa Food Hub',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        primarySwatch: Colors.orange,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.orange,
+        ),
         useMaterial3: true,
       ),
-      home: const MainScreen(),
+      home: firebaseResult.success
+          ? const MainScreen()
+          : FirebaseErrorPage(
+              error: firebaseResult.error ?? 'Unknown Firebase error',
+            ),
     );
   }
 }
+
+// ------------------------------------------------------------
+// FIREBASE ERROR PAGE
+// ------------------------------------------------------------
+
+class FirebaseErrorPage extends StatelessWidget {
+  final String error;
+
+  const FirebaseErrorPage({
+    super.key,
+    required this.error,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Newasa Food Hub'),
+      ),
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.error_outline,
+                size: 70,
+                color: Colors.red,
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'Firebase सुरू झाले नाही',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 15),
+              const Text(
+                'App ची Firebase configuration तपासा.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 16),
+              ),
+              const SizedBox(height: 20),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(15),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  error,
+                  style: const TextStyle(fontSize: 13),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ------------------------------------------------------------
+// MAIN SCREEN
+// ------------------------------------------------------------
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -568,9 +674,12 @@ class _AddMenuPageState extends State<AddMenuPage> {
         builder: (context, snapshot) {
           if (snapshot.hasError) {
             return Center(
-              child: Text(
-                'Hotel Load Error:\n${snapshot.error}',
-                textAlign: TextAlign.center,
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Text(
+                  'Hotel Load Error:\n${snapshot.error}',
+                  textAlign: TextAlign.center,
+                ),
               ),
             );
           }
@@ -619,12 +728,13 @@ class _AddMenuPageState extends State<AddMenuPage> {
                     );
                   }).toList(),
                   onChanged: (value) {
-                    setState(() {
+                                      setState(() {
                       selectedRestaurantId = value;
                     });
                   },
                 ),
                 const SizedBox(height: 16),
+
                 TextField(
                   controller: nameController,
                   decoration: const InputDecoration(
@@ -634,7 +744,9 @@ class _AddMenuPageState extends State<AddMenuPage> {
                     prefixIcon: Icon(Icons.fastfood),
                   ),
                 ),
+
                 const SizedBox(height: 16),
+
                 TextField(
                   controller: priceController,
                   keyboardType: TextInputType.number,
@@ -645,7 +757,9 @@ class _AddMenuPageState extends State<AddMenuPage> {
                     prefixIcon: Icon(Icons.currency_rupee),
                   ),
                 ),
+
                 const SizedBox(height: 16),
+
                 TextField(
                   controller: categoryController,
                   decoration: const InputDecoration(
@@ -655,7 +769,9 @@ class _AddMenuPageState extends State<AddMenuPage> {
                     prefixIcon: Icon(Icons.category),
                   ),
                 ),
+
                 const SizedBox(height: 24),
+
                 SizedBox(
                   width: double.infinity,
                   height: 52,
