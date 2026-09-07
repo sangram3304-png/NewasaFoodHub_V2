@@ -11,7 +11,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -22,126 +21,31 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Regenerate Android Platform
+      - name: Generate Android project
         run: |
-          flutter create \
-            --platforms=android \
-            --project-name=newasa_food_hub \
-            --org=com.newasafoodhub \
-            .
+          flutter create --platforms=android --org com.newasafoodhub .
 
-      - name: Check Android Files
+      - name: Set Firebase package name
         run: |
-          echo "Android app files:"
-          ls -la android/app
-          echo "Gradle files:"
-          find android -maxdepth 3 -type f | sort | grep -E "build.gradle|settings.gradle"
+          sed -i 's/com.newasafoodhub.newasa_food_hub/com.newasafoodhub.app/g' android/app/build.gradle.kts
+          sed -i 's/com.example.newasafoodhub_v2/com.newasafoodhub.app/g' android/app/build.gradle.kts
+          sed -i 's/com.newasafoodhub.newasa_food_hub/com.newasafoodhub.app/g' android/app/src/main/AndroidManifest.xml
 
-      - name: Set Android Package Name
+      - name: Verify Firebase configuration
         run: |
-          sed -i 's/applicationId = "com.example.newasa_food_hub"/applicationId = "com.newasafoodhub.app"/g' android/app/build.gradle
-          sed -i 's/applicationId "com.example.newasa_food_hub"/applicationId "com.newasafoodhub.app"/g' android/app/build.gradle
+          echo "=== Firebase package ==="
+          grep -n "package_name" android/app/google-services.json
+          echo "=== Android application ID ==="
+          grep -n "applicationId" android/app/build.gradle.kts
 
-          echo "Application ID:"
-          grep "applicationId" android/app/build.gradle
-
-      - name: Configure Google Services Plugin
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-
-          settings = Path("android/settings.gradle")
-          app = Path("android/app/build.gradle")
-
-          settings_text = settings.read_text()
-          app_text = app.read_text()
-
-          if "com.google.gms.google-services" not in settings_text:
-              settings_text = settings_text.replace(
-                  "plugins {",
-                  "plugins {\n    id 'com.google.gms.google-services' version '4.4.2' apply false",
-                  1
-              )
-              settings.write_text(settings_text)
-
-          if "com.google.gms.google-services" not in app_text:
-              app_text = app_text.replace(
-                  "plugins {",
-                  "plugins {\n    id 'com.google.gms.google-services'",
-                  1
-              )
-              app.write_text(app_text)
-          PY
-
-          echo "Google Services plugin:"
-          grep -R "google-services" android/settings.gradle android/app/build.gradle || true
-
-      - name: Set Android minSdk to 23
-        run: |
-          sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 23/g' android/app/build.gradle
-          sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 23/g' android/app/build.gradle
-
-          echo "minSdk:"
-          grep "minSdk" android/app/build.gradle || true
-
-      - name: Check Firebase configuration
-        run: |
-          if [ ! -f android/app/google-services.json ]; then
-            echo "ERROR: google-services.json not found!"
-            exit 1
-          fi
-
-          echo "Firebase configuration found."
-
-          python3 - <<'PY'
-          import json
-
-          with open("android/app/google-services.json") as f:
-              data = json.load(f)
-
-          for client in data.get("client", []):
-              package_name = client.get("client_info", {}).get("android_client_info", {}).get("package_name")
-              print("Firebase package:", package_name)
-          PY
-
-      - name: Flutter Pub Get
+      - name: Get dependencies
         run: flutter pub get
 
-      - name: Generate Debug Keystore
-        run: |
-          mkdir -p ~/.android
-
-          keytool -genkeypair \
-            -v \
-            -keystore ~/.android/debug.keystore \
-            -storepass android \
-            -alias AndroidDebugKey \
-            -keypass android \
-            -keyalg RSA \
-            -keysize 2048 \
-            -validity 10000 \
-            -dname "CN=Android Debug,O=Android,C=US"
-
-      - name: Get SHA fingerprints
-        run: |
-          keytool -list -v \
-            -keystore ~/.android/debug.keystore \
-            -alias AndroidDebugKey \
-            -storepass android \
-            -keypass android
-
       - name: Build Release APK
-        run: |
-          flutter clean
-          flutter pub get
-          flutter build apk --release
-
-      - name: Verify APK
-        run: |
-          ls -lh build/app/outputs/flutter-apk/app-release.apk
+        run: flutter build apk --release
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: newasa-food-hub-apk
+          name: NewasaFoodHub-APK
           path: build/app/outputs/flutter-apk/app-release.apk
