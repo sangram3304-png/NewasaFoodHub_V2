@@ -12,11 +12,11 @@ jobs:
 
     steps:
 
-      # 1. Checkout repository
+      # 1. Checkout
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2. Set up Flutter
+      # 2. Flutter setup
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -24,7 +24,7 @@ jobs:
           channel: stable
           cache: true
 
-      # 3. Check project
+      # 3. Check Flutter project
       - name: Check Flutter Project
         run: |
           echo "Flutter version:"
@@ -40,67 +40,19 @@ jobs:
             --project-name=newasa_food_hub \
             .
 
-      # 5. Force Android minSdk to 23
+      # 5. Set Android minSdk to 23
       - name: Set Android minSdk to 23
         run: |
           echo "Before change:"
           grep -R "minSdk" android/app || true
 
-          if [ -f android/app/build.gradle.kts ]; then
-            python3 - <<'PY'
-            from pathlib import Path
-
-            p = Path("android/app/build.gradle.kts")
-            text = p.read_text()
-
-            text = text.replace(
-                "minSdk = flutter.minSdkVersion",
-                "minSdk = 23"
-            )
-
-            text = text.replace(
-                "minSdk = flutter.minSdkVersion",
-                "minSdk = 23"
-            )
-
-            p.write_text(text)
-            PY
-          fi
-
-          if [ -f android/app/build.gradle ]; then
-            python3 - <<'PY'
-            from pathlib import Path
-
-            p = Path("android/app/build.gradle")
-            text = p.read_text()
-
-            text = text.replace(
-                "minSdkVersion flutter.minSdkVersion",
-                "minSdkVersion 23"
-            )
-
-            text = text.replace(
-                "minSdk flutter.minSdkVersion",
-                "minSdk 23"
-            )
-
-            p.write_text(text)
-            PY
-          fi
+          sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 23/g' android/app/build.gradle
+          sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 23/g' android/app/build.gradle
 
           echo "After change:"
           grep -R "minSdk" android/app || true
 
-      # 6. Verify Android Manifest
-      - name: Verify Android Project
-        run: |
-          echo "Android Manifest:"
-          cat android/app/src/main/AndroidManifest.xml
-
-          echo "Android build files:"
-          ls -la android/app/
-
-      # 7. Check Firebase configuration
+      # 6. Check Firebase configuration
       - name: Check Firebase configuration
         run: |
           if [ ! -f android/app/google-services.json ]; then
@@ -110,11 +62,11 @@ jobs:
 
           echo "Firebase configuration found."
 
-      # 8. Flutter dependencies
+      # 7. Flutter dependencies
       - name: Flutter Pub Get
         run: flutter pub get
 
-      # 9. Create Debug Keystore
+      # 8. Create Debug Keystore
       - name: Generate Android Debug Keystore
         run: |
           mkdir -p ~/.config/.android
@@ -130,7 +82,7 @@ jobs:
             -validity 10000 \
             -dname "CN=Android Debug,O=Android,C=US"
 
-      # 10. Get SHA-1 and SHA-256
+      # 9. Get SHA-1 and SHA-256
       - name: Get SHA-1 and SHA-256
         run: |
           echo "========== SHA-1 & SHA-256 =========="
@@ -143,14 +95,14 @@ jobs:
 
           echo "======================================"
 
-      # 11. Build Release APK
+      # 10. Build APK
       - name: Build Release APK
         run: |
           flutter clean
           flutter pub get
           flutter build apk --release
 
-      # 12. Upload APK
+      # 11. Upload APK
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
