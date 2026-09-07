@@ -11,6 +11,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+
       # 1. Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -23,12 +24,13 @@ jobs:
           channel: stable
           cache: true
 
-      # 3. Check Flutter project
+      # 3. Check project
       - name: Check Flutter Project
         run: |
+          echo "Flutter version:"
+          flutter --version
           echo "Project name:"
           grep "^name:" pubspec.yaml
-          flutter --version
 
       # 4. Regenerate Android platform
       - name: Regenerate Android Platform
@@ -38,35 +40,81 @@ jobs:
             --project-name=newasa_food_hub \
             .
 
-      # 5. Set minimum Android SDK to 23
+      # 5. Force Android minSdk to 23
       - name: Set Android minSdk to 23
         run: |
+          echo "Before change:"
+          grep -R "minSdk" android/app || true
+
           if [ -f android/app/build.gradle.kts ]; then
-            sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 23/' android/app/build.gradle.kts
+            python3 - <<'PY'
+            from pathlib import Path
+
+            p = Path("android/app/build.gradle.kts")
+            text = p.read_text()
+
+            text = text.replace(
+                "minSdk = flutter.minSdkVersion",
+                "minSdk = 23"
+            )
+
+            text = text.replace(
+                "minSdk = flutter.minSdkVersion",
+                "minSdk = 23"
+            )
+
+            p.write_text(text)
+            PY
           fi
 
           if [ -f android/app/build.gradle ]; then
-            sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 23/' android/app/build.gradle
+            python3 - <<'PY'
+            from pathlib import Path
+
+            p = Path("android/app/build.gradle")
+            text = p.read_text()
+
+            text = text.replace(
+                "minSdkVersion flutter.minSdkVersion",
+                "minSdkVersion 23"
+            )
+
+            text = text.replace(
+                "minSdk flutter.minSdkVersion",
+                "minSdk 23"
+            )
+
+            p.write_text(text)
+            PY
           fi
 
-          echo "Android minSdk configuration:"
-          grep -R "minSdk" android/app/build.gradle* || true
+          echo "After change:"
+          grep -R "minSdk" android/app || true
 
-      # 6. Check Firebase configuration
+      # 6. Verify Android Manifest
+      - name: Verify Android Project
+        run: |
+          echo "Android Manifest:"
+          cat android/app/src/main/AndroidManifest.xml
+
+          echo "Android build files:"
+          ls -la android/app/
+
+      # 7. Check Firebase configuration
       - name: Check Firebase configuration
         run: |
           if [ ! -f android/app/google-services.json ]; then
-            echo "ERROR: android/app/google-services.json not found"
+            echo "ERROR: google-services.json not found!"
             exit 1
           fi
 
           echo "Firebase configuration found."
 
-      # 7. Flutter dependencies
+      # 8. Flutter dependencies
       - name: Flutter Pub Get
         run: flutter pub get
 
-      # 8. Create Android Debug Keystore
+      # 9. Create Debug Keystore
       - name: Generate Android Debug Keystore
         run: |
           mkdir -p ~/.config/.android
@@ -82,7 +130,7 @@ jobs:
             -validity 10000 \
             -dname "CN=Android Debug,O=Android,C=US"
 
-      # 9. Get SHA-1 and SHA-256
+      # 10. Get SHA-1 and SHA-256
       - name: Get SHA-1 and SHA-256
         run: |
           echo "========== SHA-1 & SHA-256 =========="
@@ -95,11 +143,14 @@ jobs:
 
           echo "======================================"
 
-      # 10. Build Release APK
+      # 11. Build Release APK
       - name: Build Release APK
-        run: flutter build apk --release
+        run: |
+          flutter clean
+          flutter pub get
+          flutter build apk --release
 
-      # 11. Upload APK
+      # 12. Upload APK
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
