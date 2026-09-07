@@ -30,49 +30,59 @@ jobs:
             --org=com.newasafoodhub \
             .
 
+      - name: Check Android Files
+        run: |
+          echo "Android app files:"
+          ls -la android/app
+          echo "Gradle files:"
+          find android -maxdepth 3 -type f | sort | grep -E "build.gradle|settings.gradle"
+
       - name: Set Android Package Name
         run: |
-          sed -i 's/applicationId = "com.newasafoodhub.newasa_food_hub"/applicationId = "com.newasafoodhub.app"/g' android/app/build.gradle.kts
-          sed -i 's/applicationId = "com.example.newasa_food_hub"/applicationId = "com.newasafoodhub.app"/g' android/app/build.gradle.kts
+          sed -i 's/applicationId = "com.example.newasa_food_hub"/applicationId = "com.newasafoodhub.app"/g' android/app/build.gradle
+          sed -i 's/applicationId "com.example.newasa_food_hub"/applicationId "com.newasafoodhub.app"/g' android/app/build.gradle
 
           echo "Application ID:"
-          grep "applicationId" android/app/build.gradle.kts
+          grep "applicationId" android/app/build.gradle
 
       - name: Configure Google Services Plugin
         run: |
           python3 - <<'PY'
           from pathlib import Path
 
-          settings = Path("android/settings.gradle.kts")
-          app = Path("android/app/build.gradle.kts")
+          settings = Path("android/settings.gradle")
+          app = Path("android/app/build.gradle")
 
           settings_text = settings.read_text()
           app_text = app.read_text()
 
-          if 'com.google.gms.google-services' not in settings_text:
+          if "com.google.gms.google-services" not in settings_text:
               settings_text = settings_text.replace(
-                  'plugins {',
-                  'plugins {\n    id("com.google.gms.google-services") version "4.4.2" apply false',
+                  "plugins {",
+                  "plugins {\n    id 'com.google.gms.google-services' version '4.4.2' apply false",
                   1
               )
               settings.write_text(settings_text)
 
-          if 'com.google.gms.google-services' not in app_text:
+          if "com.google.gms.google-services" not in app_text:
               app_text = app_text.replace(
-                  'plugins {',
-                  'plugins {\n    id("com.google.gms.google-services")',
+                  "plugins {",
+                  "plugins {\n    id 'com.google.gms.google-services'",
                   1
               )
               app.write_text(app_text)
           PY
 
+          echo "Google Services plugin:"
+          grep -R "google-services" android/settings.gradle android/app/build.gradle || true
+
       - name: Set Android minSdk to 23
         run: |
-          sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 23/g' android/app/build.gradle.kts
-          sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 23/g' android/app/build.gradle.kts
+          sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 23/g' android/app/build.gradle
+          sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 23/g' android/app/build.gradle
 
           echo "minSdk:"
-          grep "minSdk" android/app/build.gradle.kts || true
+          grep "minSdk" android/app/build.gradle || true
 
       - name: Check Firebase configuration
         run: |
@@ -83,16 +93,13 @@ jobs:
 
           echo "Firebase configuration found."
 
-          echo "Checking Firebase package name:"
           python3 - <<'PY'
           import json
 
           with open("android/app/google-services.json") as f:
               data = json.load(f)
 
-          clients = data.get("client", [])
-
-          for client in clients:
+          for client in data.get("client", []):
               package_name = client.get("client_info", {}).get("android_client_info", {}).get("package_name")
               print("Firebase package:", package_name)
           PY
